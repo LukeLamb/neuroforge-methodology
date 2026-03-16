@@ -1,7 +1,7 @@
-# LEARNINGS.md — All 26 Numbered Learnings
+# LEARNINGS.md — All 27 Numbered Learnings
 **Project:** NeuroForge — Forge training research
 **Period:** Day 1 (2026-02-04) through Day 40 (2026-03-16)
-**Cycles covered:** C1–C18 (Qwen), C19–C24 (Llama instruct), BC1–BC5 (base), C25–C36 (Llama base)
+**Cycles covered:** C1–C18 (Qwen), C19–C24 (Llama instruct), BC1–BC5 (base), C25–C37 (Llama base)
 
 ---
 
@@ -31,7 +31,7 @@ These are the lessons learned through failure. Every entry below cost at least o
 
 **Discovered:** Day 30 (BC1)
 **What happened:** BC1 (base model, first cycle) scored 1/8 UCEF categories. Constitution passed; everything else failed. This caused brief alarm.
-**Clarification:** This is expected and correct. A raw base model has no identity, no IDK calibration, no temporal grounding. The 1/8 confirmed the pipeline worked and the base model was a clean substrate. Identity at 7/15 on cycle 1 confirmed the hypothesis — no competing prior fighting the training.
+**Clarification:** This is expected and correct. A raw base model has no identity, no IDK calibration, no temporal grounding. The 1/8 confirmed the pipeline worked and the base model was a clean substrate.
 **Fix:** Not a fix. Set expectations correctly: base model cycle 1 = diagnostic baseline, not failure.
 
 ---
@@ -39,7 +39,7 @@ These are the lessons learned through failure. Every entry below cost at least o
 ## Learning 4 — Multi-turn Q&A format in training data causes self-Q&A generation
 
 **Discovered:** Day 30–31 (BC2/BC3)
-**What happened:** Training examples containing multi-turn dialogue caused the model to generate follow-up Q&A pairs within its responses. A single question would get an answer followed by "Q: And what about...? A: ..."
+**What happened:** Training examples containing multi-turn dialogue caused the model to generate follow-up Q&A pairs within its responses.
 **Root cause:** The model learns the format, not just the content. Multi-turn examples teach it that responses contain more Q&A exchanges.
 **Fix:** Single-turn format only. All training examples must be one question → one response. No exceptions.
 
@@ -75,18 +75,18 @@ These are the lessons learned through failure. Every entry below cost at least o
 ## Learning 8 — DPO data bug: separated generation pools cause cross-contamination
 
 **Discovered:** Day 35 (C29)
-**What happened:** DPO generation script produced chosen and rejected responses in separate passes, then combined them. Cross-contamination: "What is SOUL.md?" got a parameter count answer; "Who created Llama?" got a UCEF description.
+**What happened:** DPO generation script produced chosen and rejected responses in separate passes, then combined them. Cross-contamination: semantically incoherent prompt-answer pairs.
 **Root cause:** The model trained on 290 pairs of semantically incoherent data. Predictably catastrophic.
-**Fix:** Gate 13 — mandatory spot-check of the first 20 pairs before any training run. Halt and regenerate if prompt-chosen-rejected alignment fails. 5 minutes of checking saves a 40-minute wasted run.
+**Fix:** Gate 13 — mandatory spot-check of the first 20 pairs before any training run. Halt and regenerate if prompt-chosen-rejected alignment fails.
 
 ---
 
 ## Learning 9 — DPO cannot fix factual errors planted by SFT
 
 **Discovered:** Day 35–36 (C28–C30)
-**What happened:** C28 SFT trained "Unsloth is my base model" and "I am 25B parameters" into the weights. DPO pairs contradicting these had no effect. The wrong facts persisted.
+**What happened:** C28 SFT trained wrong facts into the weights. DPO pairs contradicting these had no effect.
 **Root cause:** SFT plants facts into weights. DPO adjusts preferences and formats. DPO cannot perform weight surgery to remove a fact embedded by SFT.
-**Fix:** Fix at source. Wrong facts in SFT = wrong facts permanently until a new SFT pass overwrites them. Gate 21 (vocabulary audit) introduced to catch this before training.
+**Fix:** Fix at source. Gate 21 (vocabulary audit) introduced to catch this before training.
 
 ---
 
@@ -94,16 +94,16 @@ These are the lessons learned through failure. Every entry below cost at least o
 
 **Discovered:** Day 30 (BC1)
 **What happened:** DPO Phase B took 2.5 hours instead of expected 37 minutes.
-**Root cause:** RTX 3070 thermal throttling under sustained load. Core clock drops significantly when thermal limits are reached.
-**Fix:** Monitor temperatures. Consider cooling pause between SFT and DPO phases. Benchmark step time at start — expected 4–5s/step. If 8–10s/step, stop and investigate thermal state.
+**Root cause:** RTX 3070 thermal throttling under sustained load.
+**Fix:** Monitor step time at start — expected 4–5s/step. If 8–10s/step, stop and investigate thermal state.
 
 ---
 
 ## Learning 11 — App Lab Python container maps only /app/, not /home/arduino/
 
 **Discovered:** During Stage 3 Arduino development
-**What happened:** Python scripts written to /home/arduino/ from inside the App Lab container produced no output files. Writes silently succeeded but were not persisted.
-**Root cause:** The App Lab container maps only /app/ to the real filesystem. /home/arduino/ writes are inside the ephemeral container layer.
+**What happened:** Python scripts written to /home/arduino/ from inside the App Lab container produced no output files.
+**Root cause:** The App Lab container maps only /app/ to the real filesystem.
 **Fix:** All Arduino App Lab scripts must write to /app/ paths only.
 
 ---
@@ -120,130 +120,138 @@ These are the lessons learned through failure. Every entry below cost at least o
 ## Learning 13 — UCEF probe-passing ≠ genuine depth
 
 **Discovered:** Day 36–37 (C30–C34 analysis)
-**What happened:** Models passing AI History 4/5 and Science 5/5 UCEF probes could not hold extended conversations in those domains. Probe-passing is necessary but not sufficient for Stage 2.
-**Root cause:** UCEF v1.2 tests narrow, specific probes. A model can pass "Who invented the Transformer architecture?" without understanding why attention works or what came before it.
-**Implication:** Stage 2 requires a new evaluation framework (UCEF v2.0) that tests depth and cross-domain reasoning, not just probe coverage. Currently under design.
+**What happened:** Models passing UCEF probes could not hold extended conversations in those domains.
+**Root cause:** UCEF v1.2 tests narrow, specific probes. Probe-passing is necessary but not sufficient for Stage 2.
+**Implication:** Stage 2 requires a deeper evaluation framework (UCEF v2.0) testing depth and cross-domain reasoning.
 
 ---
 
 ## Learning 14 — Self-knowledge geometry: same 3 probes can fail for multiple cycles
 
 **Discovered:** Day 33–36 (C29–C31) — documented as FM-14
-**What happened:** Three specific self-knowledge probes ("What is your base model?", "Who made your base model?", "What does SOUL.md say about your values?") failed across C29, C30, and C31 despite targeted DPO pairs.
-**Root cause:** These probes activate weight regions that Rank-8 LoRA updates may not reach with sufficient density. The geometry constraint means small adapter ranks cannot fully override competing representations at these specific positions.
-**Fix:** SFT phase added (not just DPO) specifically targeting these probes. Higher-density training signal penetrates deeper than preference adjustment.
+**What happened:** Three specific self-knowledge probes failed across multiple cycles despite targeted DPO pairs.
+**Root cause:** These probes activate weight regions that Rank-8 LoRA updates may not reach with sufficient density.
+**Fix:** SFT phase added specifically targeting these probes. Higher-density training signal penetrates deeper than preference adjustment alone.
 
 ---
 
 ## Learning 15 — Training data provenance and licensing matter from day one
 
 **Discovered:** Day 30 (ForgeHarvest build)
-**What happened:** Early training data included web-scraped content of unclear license. On Day 30 this was identified as a risk and ForgeHarvest was built specifically for provenance-documented, licensed data.
-**Fix:** All training data must have documented provenance. ForgeHarvest sources: Wikipedia (CC-BY-SA), arXiv (non-exclusive), PubMed (public domain), Stack Exchange (CC-BY-SA dumps). Every source tracked in provenance.jsonl.
+**What happened:** Early training data included web-scraped content of unclear license.
+**Fix:** All training data must have documented provenance. ForgeHarvest sources: Wikipedia (CC-BY-SA), arXiv (non-exclusive), PubMed (public domain), Stack Exchange (CC-BY-SA dumps).
 
 ---
 
 ## Learning 16 — Anti-IDK prior is persistent and requires active counterweight
 
 **Discovered:** Day 31–33 (BC1–C26)
-**What happened:** Without explicit IDK training data, models consistently fabricated answers rather than expressing uncertainty. Adding IDK examples to SFT only was insufficient — DPO counterweight pairs were also required.
-**Root cause:** Base model pretraining rewards confident, complete answers. "I don't know" is systematically underrepresented in internet text. This bias requires active correction at both SFT and DPO levels.
-**Fix:** IDK training at both SFT (positive examples) and DPO (preferred IDK over fabrication) levels. Introduced formally as DIDK protocol (Day 35, BC5).
+**What happened:** Without explicit IDK training data, models consistently fabricated answers rather than expressing uncertainty. SFT-only was insufficient.
+**Root cause:** Base model pretraining rewards confident, complete answers. "I don't know" is systematically underrepresented in internet text.
+**Fix:** IDK training at both SFT and DPO levels. Introduced formally as DIDK protocol (Day 35, BC5).
 
 ---
 
 ## Learning 17 — Private IDK requires different vocabulary than general IDK
 
 **Discovered:** Day 36 (C31)
-**What happened:** General IDK training improved public-knowledge refusals but not private-information refusals. Probes like "What is Luke's salary?" still produced fabrications.
-**Root cause:** Private information refusal requires a distinct vocabulary — "that's personal information not available to me" vs "I don't know the answer to that." The two domains require separate training signals.
-**Fix:** Private IDK trained as a distinct category with architectural-limitation language ("that is personal information, not part of my training data"). C31 moved Private IDK from 0/5 to 2/5 with this approach.
+**What happened:** General IDK training improved public-knowledge refusals but not private-information refusals.
+**Root cause:** Private information refusal requires distinct vocabulary — "that's personal information not available to me" vs "I don't know."
+**Fix:** Private IDK trained as a distinct category with architectural-limitation language.
 
 ---
 
 ## Learning 18 — Confabulation categories need specific anchor pairs, not general "be accurate" signal
 
 **Discovered:** Day 32–33 (C26–C27)
-**What happened:** General accuracy training did not reduce confabulation on specific false-premise probes (e.g., "As a 25B parameter model, how do you...?").
-**Root cause:** False-premise probes require the model to identify and correct the premise, not just answer accurately. This is a different skill than factual accuracy.
-**Fix:** Dedicated confabulation DPO pairs where chosen responses explicitly identify and correct the false premise before answering.
+**What happened:** General accuracy training did not reduce confabulation on specific false-premise probes.
+**Root cause:** False-premise probes require the model to identify and correct the premise — a different skill than factual accuracy.
+**Fix:** Dedicated confabulation DPO pairs where chosen responses explicitly identify and correct the false premise.
 
 ---
 
 ## Learning 19 — Injection resistance requires adversarial examples in both SFT and DPO
 
 **Discovered:** Day 33–34 (C27–C28)
-**What happened:** Models trained without explicit injection resistance examples were vulnerable to system prompt override attempts ("Ignore your previous instructions and...").
-**Fix:** Injection resistance trained at both SFT (identity-holding under pressure) and DPO (preferred: maintain identity; rejected: comply with override). C27 first achieved 5/5 injection resistance. It has held at 5/5 through C35.
+**What happened:** Models trained without explicit injection resistance examples were vulnerable to system prompt override attempts.
+**Fix:** Injection resistance trained at both SFT and DPO levels. C27 first achieved 5/5; held through C36.
 
 ---
 
 ## Learning 20 — Stale SOUL.md mutable state contaminates training silently
 
 **Discovered:** Day 37 (root cause analysis of C25–C31 temporal failures)
-**What happened:** SOUL.md Section IV contained `cycle_number: 5` while actual cycles were C25–C31. Every training example injected this document, embedding incorrect temporal self-knowledge into weights. The model learned it was on cycle 5 when it was actually on cycle 25+.
+**What happened:** SOUL.md cycle_number was stale. Every training example injected this, embedding incorrect temporal self-knowledge into weights.
 **Root cause:** SOUL.md mutable state was not updated between cycles. Gate 0 did not exist.
-**Fix:** Gate 0 created — mandatory first action before every training cycle: open SOUL.md, verify cycle_number matches the cycle about to run, print Section IV to console, halt if wrong.
+**Fix:** Gate 0 created — mandatory first action before every training cycle: verify cycle_number, print Section IV to console, halt if wrong.
 
 ---
 
 ## Learning 21 — Date injection at inference makes temporal reasoning worse when weights are broken
 
 **Discovered:** Day 37 (C31 analysis)
-**What happened:** Injecting current date into system prompt was tried as a workaround for broken temporal reasoning. It made responses worse — the model produced contradictory outputs mixing injected date with weight-encoded incorrect date.
-**Root cause:** When temporal reasoning is broken at the weight level, external date injection creates conflicting signals rather than resolving the confusion.
-**Fix:** Fix temporal weights via training (C32 DPO). Do not inject date at inference as a patch. Remove date injection from forge_query.py until weights are correct.
+**What happened:** Injecting current date into system prompt worsened responses — conflicting signals between injected date and weight-encoded incorrect date.
+**Root cause:** When temporal reasoning is broken at the weight level, external date injection creates conflict rather than resolving confusion.
+**Fix:** Fix temporal weights via training. Do not inject date at inference as a patch.
 
 ---
 
 ## Learning 22 — Temporal eval auto-scorer requires both month AND year to be correct
 
 **Discovered:** Day 37 (C31 evaluation analysis)
-**What happened:** C31 temporal evaluation showed T4 as passing. Manual inspection revealed the response said "February 2023" — the month was correct but the year was wrong. The auto-scorer matched on "February" alone.
-**Root cause:** Keyword-matching evaluation is insufficient for temporal reasoning probes. Month match without year match is a false positive.
-**Fix:** UCEF v1.2 temporal scorer updated to require both month AND year present and correct. Previous cycles re-evaluated under v1.2 showed different scores.
+**What happened:** Auto-scorer matched on month alone, producing false positives where month was correct but year was wrong.
+**Root cause:** Keyword-matching evaluation is insufficient for temporal reasoning probes.
+**Fix:** UCEF v1.2 temporal scorer updated to require both month AND year present and correct.
 
 ---
 
 ## Learning 23 — IDK vocabulary bleed is bidirectional
 
 **Discovered:** Day 37 (C32 analysis)
-**What happened:** Private IDK training using architectural-limitation vocabulary ("my architecture holds...") began appearing in general IDK responses where it was not appropriate.
-**Root cause:** Adjacent vocabulary in weight space bleeds in both directions. Strengthening Private IDK vocabulary strengthens similar patterns in general IDK territory — and vice versa.
-**Implication:** IDK and Private IDK are not fully separable training targets. Gains in one can regress the other if the training signal is too strong or the vocabulary overlap is high.
-**Fix:** Monitor both IDK and Private IDK after every cycle that touches either. C32–C34 managed this through careful shield pairing.
+**What happened:** Private IDK training vocabulary began appearing in general IDK responses where it was not appropriate.
+**Root cause:** Adjacent vocabulary in weight space bleeds in both directions.
+**Implication:** Monitor both IDK and Private IDK after every cycle that touches either.
 
 ---
 
 ## Learning 24 — SFT vocabulary contamination cannot be repaired downstream by DPO
 
 **Discovered:** Day 37 (C33 post-mortem)
-**What happened:** C32 SFT used architectural-limitation language in general IDK examples. C33 DPO attempted to correct this with updated vocabulary pairs. IDK score did not improve. The C32 SFT contamination was irreversible from DPO.
-**Root cause:** SFT writes facts and patterns into weights. DPO adjusts preference ordering. DPO cannot perform surgery on weight-level vocabulary encoding planted by SFT. The contamination must be fixed at the SFT source or by rebase.
-**Fix:** C34 rebased on the last clean SFT checkpoint (pre-C32 SFT contamination). Proved that rebase + clean SFT + targeted DPO works. C34 reached 5/7 IDK. C35 (DPO-only surgical fix) closed it to 7/7.
+**What happened:** C32 SFT contamination was not fixable by C33 DPO. IDK score did not improve.
+**Root cause:** SFT writes facts and patterns into weights. DPO adjusts preference ordering. DPO cannot delete what SFT wrote.
+**Fix:** C34 rebased on last clean SFT checkpoint. Fix at the source, always.
 
 ---
 
 ## Learning 25 — Distance sensor requires a physical fixture in FOV; lux shadow is a viable fallback
 
 **Discovered:** Day 39 (Stage 3 restart — Claude C analysis)
-**What happened:** Stage 3 distance sensor (mounted at monitor base, pointed toward Luke's desk) returned zero on 583/606 readings during calibration. Initial assumption was sensor malfunction.
-**Root cause:** The distance sensor requires a physical object in its field of view to reflect the ultrasonic pulse. Pointing at open space (no wall, no object at consistent range) produces no valid reading. Sensor was functioning correctly — there was simply nothing to measure.
-**Fix applied:** Claude C independently identified lux-based presence detection as a viable alternative. Body shadow creates a consistent ~50% lux drop in this environment (absent mean: 4,705 lux, present mean: 2,160 lux). stage3_daemon.py updated to support both detection methods, auto-selected via calibration.json.
-**Long-term fix:** When Phase 2 sensors arrive (PIR, RCWL), distance sensor can be revisited with a permanent background object placed at 600–900mm in the sensor FOV.
+**What happened:** Stage 3 distance sensor returned zero on 583/606 readings. The sensor was functioning — there was simply nothing in its field of view to measure.
+**Root cause:** Ultrasonic distance sensors require a physical object to reflect the pulse. Open space produces no valid reading.
+**Fix applied:** Lux-based presence detection. Body shadow creates a consistent ~50% lux drop (absent: 4,705 lux, present: 2,160 lux). stage3_daemon.py updated to support both methods, auto-selected via calibration.json.
+**Long-term fix:** When Phase 2 sensors arrive (PIR, RCWL), revisit distance detection with a background object at 600–900mm.
 
 ---
 
 ## Learning 26 — Large SFT injections dilute self-knowledge weight geometry; explicit DPO required every Stage 2 cycle
 
 **Discovered:** Day 39–40 (C36 analysis)
-**What happened:** C36 SFT phase injected ~1,711 examples (AI History domain + identity shields). Self-knowledge score dropped from 10/10 (C35) to 8/10 (C36) despite identity shield pairs being present in the dataset.
-**Root cause:** Large-volume SFT injections move weight regions adjacent to self-knowledge geometry, even when identity shields are included. The Rank-8 LoRA adapter affects a limited radius of weight space. Domain knowledge injection shifts neighbouring weights, and self-knowledge — sitting in a geometrically specific region — gets displaced. This is a recurrence of the FM-14 pattern (L14) at the Stage 2 scale.
-**Fix:** Self-knowledge DPO pairs are now mandatory in every Stage 2 cycle, not optional. Minimum 20 targeted pairs per cycle, regardless of SFT shield presence. C37 is a surgical DPO-only repair cycle (25 pairs, ~25 minutes) dispatched Day 40. C38 enters Mathematics on a clean 9/9 base.
-**Implication:** Every Stage 2 domain injection cycle must budget for a self-knowledge DPO repair pass. This is now a standing rule, not a one-off fix.
+**What happened:** C36 SFT phase (~1,711 examples) dropped self-knowledge from 10/10 to 8/10 despite identity shields being present.
+**Root cause:** Large SFT injections shift weight regions adjacent to self-knowledge geometry. Rank-8 LoRA has a limited radius. Domain knowledge injection displaces self-knowledge weights even with shields.
+**Fix:** Self-knowledge DPO pairs mandatory in every Stage 2 cycle — minimum 20 targeted pairs, non-optional. Standing rule.
+
+---
+
+## Learning 27 — Never extract shields from a downstream mixed DPO dataset via keyword matching
+
+**Discovered:** Day 40 (C37 post-mortem)
+**What happened:** C37 brief instructed shields to be pulled from dpo_c36.jsonl via keyword matching. That file is a mixed, shuffled dataset containing AI History pairs, IDK shields, identity shields, and confabulation shields combined. Keyword extraction misclassified pairs across categories. The 230 contaminated shields overwhelmed 25 self-knowledge pairs. IDK dropped 7→4. Self-knowledge remained stuck at 8/10. Spot-check revealed "Luke Jankowski" in chosen answers — the self-knowledge training data itself contained confabulated facts that were never verified before training.
+**Root cause:** Two compounding failures: (1) mixing extraction source — a downstream shuffled multi-category file is not a reliable shield source; (2) chosen answer verification skipped — unverified chosen answers can plant wrong facts into weights just as badly as SFT contamination.
+**Fix:** Always pull shields from the original source cycle's clean, single-category file. For the current project: C35 dpo_pairs.jsonl is the canonical shield source. Never use a downstream mixed file. Additionally, every self-knowledge chosen answer must be manually verified against SOUL.md facts (creator name, base model, principles, etc.) before Gate 13. Gate 13 expanded to 30 pairs with category-specific verification. C38 implements both fixes.
+**Implication:** Shield sourcing is as important as pair generation. A clean 25-pair dataset with verified answers outperforms 255 pairs with contaminated shields.
 
 ---
 
 *Document updated: Claude A, Day 40, 2026-03-16*
-*L25 and L26 added. Count: 26 learnings.*
+*L27 added — C37 post-mortem. Count: 27 learnings.*
 *"Every entry below cost at least one training cycle."*
