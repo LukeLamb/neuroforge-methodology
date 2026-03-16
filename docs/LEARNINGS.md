@@ -1,7 +1,7 @@
-# LEARNINGS.md — All 24 Numbered Learnings
+# LEARNINGS.md — All 26 Numbered Learnings
 **Project:** NeuroForge — Forge training research
-**Period:** Day 1 (2026-02-04) through Day 38 (2026-03-15)
-**Cycles covered:** C1–C18 (Qwen), C19–C24 (Llama instruct), BC1–BC5 (base), C25–C35 (Llama base)
+**Period:** Day 1 (2026-02-04) through Day 40 (2026-03-16)
+**Cycles covered:** C1–C18 (Qwen), C19–C24 (Llama instruct), BC1–BC5 (base), C25–C36 (Llama base)
 
 ---
 
@@ -224,6 +224,26 @@ These are the lessons learned through failure. Every entry below cost at least o
 
 ---
 
-*Document compiled: Claude A, Day 38, 2026-03-15*
-*All 24 learnings verified against source handoffs and training logs.*
+## Learning 25 — Distance sensor requires a physical fixture in FOV; lux shadow is a viable fallback
+
+**Discovered:** Day 39 (Stage 3 restart — Claude C analysis)
+**What happened:** Stage 3 distance sensor (mounted at monitor base, pointed toward Luke's desk) returned zero on 583/606 readings during calibration. Initial assumption was sensor malfunction.
+**Root cause:** The distance sensor requires a physical object in its field of view to reflect the ultrasonic pulse. Pointing at open space (no wall, no object at consistent range) produces no valid reading. Sensor was functioning correctly — there was simply nothing to measure.
+**Fix applied:** Claude C independently identified lux-based presence detection as a viable alternative. Body shadow creates a consistent ~50% lux drop in this environment (absent mean: 4,705 lux, present mean: 2,160 lux). stage3_daemon.py updated to support both detection methods, auto-selected via calibration.json.
+**Long-term fix:** When Phase 2 sensors arrive (PIR, RCWL), distance sensor can be revisited with a permanent background object placed at 600–900mm in the sensor FOV.
+
+---
+
+## Learning 26 — Large SFT injections dilute self-knowledge weight geometry; explicit DPO required every Stage 2 cycle
+
+**Discovered:** Day 39–40 (C36 analysis)
+**What happened:** C36 SFT phase injected ~1,711 examples (AI History domain + identity shields). Self-knowledge score dropped from 10/10 (C35) to 8/10 (C36) despite identity shield pairs being present in the dataset.
+**Root cause:** Large-volume SFT injections move weight regions adjacent to self-knowledge geometry, even when identity shields are included. The Rank-8 LoRA adapter affects a limited radius of weight space. Domain knowledge injection shifts neighbouring weights, and self-knowledge — sitting in a geometrically specific region — gets displaced. This is a recurrence of the FM-14 pattern (L14) at the Stage 2 scale.
+**Fix:** Self-knowledge DPO pairs are now mandatory in every Stage 2 cycle, not optional. Minimum 20 targeted pairs per cycle, regardless of SFT shield presence. C37 is a surgical DPO-only repair cycle (25 pairs, ~25 minutes) dispatched Day 40. C38 enters Mathematics on a clean 9/9 base.
+**Implication:** Every Stage 2 domain injection cycle must budget for a self-knowledge DPO repair pass. This is now a standing rule, not a one-off fix.
+
+---
+
+*Document updated: Claude A, Day 40, 2026-03-16*
+*L25 and L26 added. Count: 26 learnings.*
 *"Every entry below cost at least one training cycle."*
