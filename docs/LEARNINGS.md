@@ -282,3 +282,30 @@ These are the lessons learned through failure. Every entry below cost at least o
 *L29 added — Nosys self-knowledge gate split. Operational gate → sysprompt condition.*
 *Count: 29 learnings.*
 *"Every entry below cost at least one training cycle."*
+
+## Learning 30 — Continuous LoRA fine-tuning risks general capability erosion in 8B models
+
+**Identified:** Day 41 — Gemini Pro independent review
+**What the risk is:** In an 8B model with constrained LoRA rank, parameter space is not infinite. Repeated fine-tuning cycles injecting identity anchors, domain knowledge, and preference alignment may gradually displace the general reasoning capability that makes the model useful beyond its trained domains.
+**Status:** Unconfirmed in Forge — no baseline exists yet. Risk is real and measurable.
+**Fix:** UCEF v1.3.1 adds a fixed 10-probe general reasoning baseline (GC-01 through GC-10) to P2. First run (C42) establishes the floor. Subsequent cycles track the trajectory.
+**Implication:** If general capability is declining, Stage 2 specialisation gains are coming at a cost to the foundation. That trade-off must be made consciously, not discovered after irreversible drift. If decline is confirmed across 3+ cycles, escalate from P2 to P1.
+
+---
+
+## Learning 31 — Shield count must scale with adapter rank
+
+**Discovered:** Day 41 — Claude C forensic analysis of C41 regression
+**What happened:** C41 used Rank-16 LoRA with only 10 DPO shields. IDK collapsed 7→1. Identity 13→10. Confabulation 26→23. C40 used Rank-16 with 312 shields and held all categories.
+**Root cause:** A higher-rank LoRA adapter has a larger weight-space radius — it exerts more influence per training step, both to encode new behaviour and to displace existing behaviour. Shields protect behavioural categories by reinforcing existing weight patterns. When adapter rank doubles, the required shield density must scale proportionally or the unprotected categories are overwritten.
+**The proof:** C41 sysprompt self-knowledge was 9/10 (best ever) — the Mathematics SFT and KnownPatch worked perfectly. The catastrophic nosys regression was entirely caused by insufficient shields, not bad data or wrong architecture.
+**Working rule:** Rank-16 requires a minimum of 100 DPO shields. C40's 312 shields is the confirmed safe number. Never drop below 80 for Rank-16 cycles.
+**Fix for C42:** Same structure as C41 with shield count raised to ≥ 100 from C35 dpo_pairs.jsonl.
+
+---
+
+*Document updated: Claude A, Day 41, 2026-03-16*
+*L30 added — General capability erosion risk. Gemini Pro independent review.*
+*L31 added — Shield count must scale with adapter rank. Claude C C41 forensic.*
+*Count: 31 learnings.*
+*"Every entry below cost at least one training cycle."*
