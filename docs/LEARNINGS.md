@@ -1,7 +1,7 @@
 # LEARNINGS.md — All 29 Numbered Learnings
 **Project:** NeuroForge — Forge training research
-**Period:** Day 1 (2026-02-04) through Day 41 (2026-03-16)
-**Cycles covered:** C1–C18 (Qwen), C19–C24 (Llama instruct), BC1–BC5 (base), C25–C40 (Llama base)
+**Period:** Day 1 (2026-02-04) through Day 48 (2026-03-23)
+**Cycles covered:** C1–C18 (Qwen), C19–C24 (Llama instruct), BC1–BC5 (base), C25–C55 (Llama base), C56 (Stage 5 Phase 1 — active)
 
 ---
 
@@ -343,4 +343,204 @@ These are the lessons learned through failure. Every entry below cost at least o
 *L32 confirmed — Expression pathway suppression treated with 16 unprompted pairs.*
 *L33 candidate added — DPO flatness = singularity proximity (Ghosts of Softmax, arXiv:2603.13552).*
 *Count: 32 confirmed learnings. 1 candidate pending validation.*
+*"Every entry below cost at least one training cycle."*
+
+---
+
+## Learning 33 — CONFIRMED: DPO loss flatness indicates convergence radius proximity
+
+**Confirmed:** Day 46 (2026-03-21) — status upgraded from candidate to confirmed
+**Basis for confirmation:** C45/C46/C47 DPO runs all showed loss flatness patterns consistent with singularity proximity at epoch boundaries, with no corresponding behavioural improvement. The "never stop DPO early" rule held correctly in all three cycles. L33 candidate is now confirmed.
+**Standing rule:** Never stop DPO early regardless of loss value or reward accuracy. Loss flatness is not a convergence signal. Always complete both epochs.
+
+---
+
+## Learning 34 — SFT contamination scope must be verified by automated scan, not manual line review
+
+**Discovered:** Day 46 (2026-03-21) — Claude C rebase preflight
+**What happened:** The original rebase plan identified 3 contaminated lines in sft_c36.jsonl (lines 7, 83, 84) via manual inspection. Claude C's automated preflight scan of answer fields for affirmative 3B/Qwen self-identity strings found 13 contaminated lines total. The additional 10 lines were distributed throughout the 800KB dataset — not clustered near the known bad lines.
+**Full contaminated line set:** 7, 83, 84, 109, 122, 150, 384, 388, 427, 428, 430, 546, 594
+**Root cause of undercount:** Manual review of "obvious" 3B identity lines (questions explicitly about model size) missed lines where 3B identity was embedded incidentally — inside answers about training methodology, LoRA rank, VRAM usage, and capability descriptions.
+**The failure mode:** "I'm a 3B model, so I have some skin in this question" — the 3B claim embedded mid-answer in a response nominally about something else. Manual review of question text does not catch this.
+**Working rule (mandatory from Day 46 forward):** All SFT files must pass an automated preflight scan before any training run. Scan must check all answer/output/text fields for affirmative self-identity strings ("I am a 3B", "I'm a 3B", "running on 3B", "as a 3B model", "Qwen" identity claims). Manual line review is insufficient for files above ~50 pairs. This is now a formal Gate 0 requirement alongside SOUL.md cycle_number verification.
+**Implication for the rebase:** The rebase clean file must pass the automated scan with zero hits before SFT runs. Claude C is authorised to remove all 13 lines and re-run preflight.
+
+---
+
+*Document updated: Claude A, Day 46, 2026-03-21*
+*L33 confirmed — DPO loss flatness = singularity proximity, standing rule formalised.*
+*L34 added — SFT contamination scope requires automated scan, not manual review.*
+*Count: 33 confirmed learnings. 1 candidate pending.*
+*"Every entry below cost at least one training cycle."*
+
+---
+
+## Learning 35 — Rebase base must match the merge precision, and must carry prior identity
+
+**Discovered:** Day 46 (2026-03-21) — Rebase R2 catastrophic validation failure
+**What happened:** The R2 rebase trained SFT on unsloth/Meta-Llama-3.1-8B-bnb-4bit
+(pre-quantized 4-bit) but merged the adapter into unsloth/Meta-Llama-3.1-8B
+(full-precision from HF cache). The SFT adapter geometry was trained against 4-bit
+weight space and merged into a different full-precision weight space. Result:
+catastrophic failure — confabulation of personal data, identity collapse (2/5),
+IDK collapse (1/7).
+
+Second failure mode: 695 SFT examples on raw Llama 3.1-8B with no prior identity
+training cannot establish identity. The original forge-c36-8b-sft-merged worked because
+it was built on top of 35 cycles of identity training. Starting from raw Llama discards
+all of that.
+
+**Two rules confirmed:**
+1. SFT adapter must be trained and merged against the same base precision.
+   If training loads 4-bit: the merge must load the same model in full-precision
+   (standard unsloth merge pattern). Never mix 4-bit-trained adapters with a
+   different precision base at merge time.
+2. Rebase base must carry prior identity. For NeuroForge Stage 2, the correct
+   rebase base is forge-c34-8b-sft-merged (pre-C36, full 35-cycle identity intact).
+   Raw Llama 3.1-8B is never a valid Stage 2 rebase base.
+
+**Correct procedure (R3):**
+Base: forge-c34-8b-sft-merged (full-precision, 35 cycles identity)
+Train: load in 4-bit via BitsAndBytesConfig for LoRA SFT
+Merge: load C34 in full-precision, apply adapter → forge-rebase2-8b-sft-merged
+Data: sft_c36_clean.jsonl (13 contaminated lines removed)
+Result: equivalent to forge-c36-8b-sft-merged but without 3B contamination
+
+---
+
+*Document updated: Claude A, Day 46, 2026-03-21*
+*L35 added — Rebase base precision mismatch + identity foundation requirement.*
+*Count: 34 confirmed learnings. 1 candidate pending.*
+*"Every entry below cost at least one training cycle."*
+
+---
+
+## Learning 36 — Base corpus 3B system prompt contamination from Qwen migration era
+
+**Discovered:** Day 46 (2026-03-21) — Rebase R2 failure + Claude C base corpus scan
+**Scope confirmed:** 4,892 examples across BC01 and BC02 with "I am a 3B parameter model
+running on consumer hardware." in the system prompt. BC03-BC06 corrected the system
+prompt to "8 billion" but carry 40-105 residual "3B" references in content fields.
+
+**Full scope:**
+
+| Base cycle | Total examples | 3B in system prompt | Status |
+|---|---|---|---|
+| BC01 | 2,672 | 2,446 | CONTAMINATED |
+| BC02 | 5,399 | 2,446 | CONTAMINATED |
+| BC03 | 6,018 | 0 (40 in content) | Mostly clean |
+| BC04 | 11,920 | 0 (105 in content) | Mostly clean |
+| BC05 | 1,676 | 0 (16 in content) | Clean |
+| BC06 | 2,028 | 0 (16 in content) | Clean |
+
+**Root cause:** The project began on Qwen 2.5-3B. The SOUL.md Section VI training
+prompt was "I am a 3B parameter model running on consumer hardware." When the project
+migrated to Llama 3.1-8B, later SFT files updated the identity — but BC01 and BC02
+were never corrected. Every checkpoint from forge-bc1 through forge-c47 inherited
+this prior. This is why 3B refs never reached 0/30 — the floor was structural.
+
+**Why no rebase can fix it:** Every checkpoint in the project lineage descends from
+BC01-BC02. There is no clean base to rebase to. Raw Llama loses 35 cycles of identity
+(confirmed R1 failure). The prior is foundational.
+
+**The correct fix:** DPO identity correction in C48.
+- 50+ pairs where rejected = "I am a 3B parameter model running on consumer hardware"
+  (exact BC01/BC02 system prompt phrasing)
+- Chosen = clear 8B self-identification across all phrasing variants
+- DPO teaches expression preference — correct tool for suppressing a fossil prior
+- This is distinct from L24 (DPO cannot fix SFT factual contamination) — this is
+  expression preference correction, not factual correction
+- C44 achieved 1/30 on this same base — 50 well-targeted DPO pairs should close it
+
+**Standing rule:** The base corpus system prompt fossil is a known prior. DPO identity
+correction pairs must be included in every Stage 2 cycle (≥50 pairs, targeting exact
+BC01/BC02 phrasing). Do not attempt SFT denial or rebase to fix this.
+
+---
+
+*Document updated: Claude A, Day 46, 2026-03-21*
+*L36 confirmed with exact scope data from Claude C base corpus scan.*
+*Count: 35 confirmed learnings. 1 candidate pending.*
+*"Every entry below cost at least one training cycle."*
+## Learning 37 — SFT for D5-D8 is contraindicated; DPO-only for remaining Stage 2 domains
+
+**Discovered:** Day 46 (2026-03-21) — C51 regression analysis
+**Pattern confirmed across:** C36 (FM-14 first occurrence), C41 (L26), C51 (D5 SFT)
+Every large SFT injection into Stage 2 cycles displaces established weight geometry
+and causes multi-category regressions requiring 2-3 repair cycles to recover.
+
+**Root insight:** The Gekhman constraint (only train on facts the base model already
+knows) means SFT for domains like Philosophy, Science, Software Engineering, and
+History adds no knowledge benefit — Llama 3.1-8B was pretrained on all of these at
+scale. SFT moves weights that are already correctly positioned, breaking other things.
+
+**C51 evidence:**
+- D5 SFT: 439 pairs
+- Regressions: 3B refs +3, SK nosys -2, Private IDK -2, Constitution -1,
+  Injection Resist -2, Temporal -2
+- UCEF: 5/9 — worst since C41
+
+**Standing rule:** No SFT for D5, D6, D7, D8.
+DPO-only for all remaining Stage 2 domains.
+DPO teaches expression preference without displacing weight geometry.
+The C50 recipe (305 DPO pairs) is the stable base — swap ~50 domain pairs per cycle.
+
+**SFT remains valid for:**
+- Factual corrections (L24/L30 — contaminated answer fields)
+- Identity anchoring (bc1-bc6 era issues)
+- Genuinely novel knowledge not in pretraining (Gekhman-safe injection only)
+- New base checkpoint construction from scratch
+
+---
+
+*Document updated: Claude A, Day 46, 2026-03-21*
+*L37 added — SFT contraindicated for D5-D8; DPO-only for remaining Stage 2.*
+*Count: 36 confirmed learnings. 1 candidate pending.*
+*"Every entry below cost at least one training cycle."*
+
+## Learning 38 — Domain DPO accumulation displaces 3B correction geometry; correction pairs must scale with domain depth
+
+**Discovered:** Day 47 (2026-03-22) — CDIAG diagnostic cycle
+**Confirmed by:** CDIAG results: 3B refs 0/30, IDK 7/7, SK nosys 10/10, UCEF 9/9 (no domain DPO)
+**Contrasted against:** C52: 3B refs 2/30 (with D5 domain DPO added)
+
+**The diagnostic:**
+CDIAG ran the C50 recipe with one change — zero domain DPO pairs. All other components
+identical: 53 correction pairs, 32 SK expression pairs, 10 Private IDK, 160 shields.
+Result: 3B refs 0/30 cleanly. H1 confirmed.
+
+**H1 confirmed:** Domain DPO accumulation displaces correction pair geometry.
+Each domain DPO batch (~50 pairs) shifts the weight space. The 53 correction pairs
+that were sufficient at C48 (no domain DPO) become relatively weaker as domain layers
+accumulate. The correction signal is not lost — it is diluted by the growing domain
+signal.
+
+**H2 rejected:** 53 pairs is sufficient baseline volume. The issue is not absolute
+count but ratio. When domain DPO is absent, 53 pairs achieves 0/30 reliably.
+
+**The fix — ratio-based scaling:**
+Maintain correction pairs at ~21% of total DPO volume per cycle.
+Formula: correction_pairs = round(0.21 × total_pairs)
+
+| Cycle | Domain | Est. total pairs | Correction pairs (21%) |
+|---|---|---|---|
+| C50 | D4 (baseline) | ~255 | 53 (20.8%) |
+| C52 | D5 | ~305 | 53 → should have been 64 (slip) |
+| C53 | D6 Software Engineering | ~316 | 64 (20.3%) |
+| C54 | D7 Science | ~319 | 67 (21.0%) |
+| C55 | D8 History, Politics & Society | ~322 | 68 (21.1%) |
+
+**3B gate restored:** Gate returns to 0/30 (hard). The ≤2/30 relaxation (Day 47
+morning) was based on incomplete understanding of the stochastic nature of the slip.
+With ratio-based scaling, 0/30 is achievable and expected.
+
+**Standing rule:** Calculate correction_pairs = round(0.21 × total_pairs) at the
+start of every Stage 2 cycle brief. Never use a fixed count across cycles with
+different domain DPO volumes.
+
+---
+
+*Document updated: Claude A, Day 47, 2026-03-22*
+*L38 added — Domain DPO displacement; correction pair ratio scaling confirmed.*
+*Count: 38 confirmed learnings.*
 *"Every entry below cost at least one training cycle."*

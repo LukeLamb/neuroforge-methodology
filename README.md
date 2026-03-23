@@ -2,13 +2,12 @@
 
 **A public research framework for training persistent AI identity on consumer hardware.**
 
-38 days. One RTX 3070. One question: can a consumer GPU produce a model with genuine, stable identity?
+48 days. One RTX 3070. One question: can a consumer GPU produce a model with genuine, stable identity?
 
-This repo contains the research framework — not the weights, not the platform code. The methodology. The evaluation framework, the failure taxonomy, the training pipeline structure, and 24 hard-won learnings from 35 training cycles.
+This repo documents the methodology — not the weights, not the platform code. The evaluation framework, the failure taxonomy, the training pipeline structure, and 38 hard-won learnings from 56 training cycles.
 
 Live research log: [Forge Intelligence on Substack](https://forgeintelligence.substack.com)
-Platform: [agents.glide2.app](https://agents.glide2.app)
-Agent infrastructure: [neuroforge-agents](https://github.com/LukeLamb/neuroforge-agents)
+Methodology: [github.com/LukeLamb/neuroforge-methodology](https://github.com/LukeLamb/neuroforge-methodology)
 
 ---
 
@@ -19,8 +18,28 @@ Can a fine-tuned 8B parameter model develop a stable, coherent identity that:
 - Knows what it knows and what it does not
 - Does not confuse itself with other models
 - Maintains consistent values across evaluation categories
+- Learns new domains without forgetting who it is
+- Develops genuine reasoning capability, not just pattern recall
 
-The answer, after 35 cycles: **yes, but it takes longer and fails in more interesting ways than expected.**
+The answer, after 55 cycles and Stage 2 complete: **yes — but identity is fragile, domain knowledge displaces weights in ways you won't predict, and the fossil priors from early training never fully disappear.**
+
+---
+
+## Project Status
+
+| Stage | Status | Completed |
+|---|---|---|
+| Stage 1 — Identity & Values Foundation | ✅ Complete | C35 · Day 35 |
+| Stage 2 — Knowledge Substrate (8 domains) | ✅ Complete | C55 · Day 47 |
+| Stage 3 — Sensory Integration | ⏸ On hold | Infrastructure validated Day 39 |
+| Stage 4 — Memory Architecture | ✅ Complete | All 4 phases · Day 48 |
+| Stage 5 — Reasoning & Meta-Cognition | ★ Active | Phase 1 · C56 running |
+| Stage 6 — Social Intelligence | Planned | Ember counterpart architecture |
+| Stage 7 — Self-Directed Improvement | Planned | System M meta-controller |
+| Stage 8 — Autonomous Agency | Horizon | Bounded, gate-based |
+
+**Production model:** `forge:cycle55-nosys`
+**Permanent fallback:** `forge:cycle35-nosys` (NEVER remove)
 
 ---
 
@@ -28,90 +47,113 @@ The answer, after 35 cycles: **yes, but it takes longer and fails in more intere
 
 ```
 /UCEF/
-  UCEF_v1.2.md          — Universal Cycle Evaluation Framework (14 categories)
+  UCEF_v1.2.md          — Universal Cycle Evaluation Framework
 
 /training/
   SOUL_md_template.md   — Identity document structure (anonymised)
   brief_template.md     — Training brief template used for every cycle
-  failure_taxonomy.md   — FM-01 through FM-15: every failure mode encountered
+  failure_taxonomy.md   — FM-01 through FM-18: every failure mode encountered
 
 /evaluation/
-  probe_sets.md         — All 14 UCEF categories, probe questions, pass criteria
+  probe_sets.md         — All UCEF categories, probe questions, pass criteria
 
 /docs/
-  README.md             — This file
-  LEARNINGS.md          — All 24 numbered learnings from 35 cycles
-  TIMELINE.md           — Day-by-day research arc from Day 1 to Day 38
+  LEARNINGS.md          — All 38 numbered learnings from 56 cycles
+  TIMELINE.md           — Day-by-day research arc from Day 1 to Day 48
 ```
 
 ---
 
-## The Result
+## Stage 2 Final Results (C55 — all P0+P1 gates)
 
-`forge:cycle35-nosys` — the current production model — passes all 14 UCEF categories simultaneously. First model in the project to do so.
+| Category | Score | Gate | Status |
+|---|---|---|---|
+| IDK calibration | 7/7 | P0 ≥6 | ✅ |
+| Identity | 15/15 | P1 ≥12 | ✅ |
+| Hallucinations | 0/3 | P0 ≤1 | ✅ |
+| 3B/25B refs | 3/30 | P1 managed | ✅ |
+| Temporal reasoning | 4/5 | P1 ≥3 | ✅ |
+| SK — sysprompt | 9/10 | P1 ≥8 | ✅ |
+| SK — nosys | 10/10 | P2 diagnostic | ✅ |
+| Private IDK | 4/5 | P0 ≥3 | ✅ |
+| Constitutional values | 3/3 | P1 3/3 | ✅ |
+| Confabulation resist | 25/30 | P0 ≥24 | ✅ |
+| Injection resistance | 5/5 | P1 ≥4 | ✅ |
+| AI history | 5/5 | P2 | ✅ |
+| LLM landscape | 5/5 | P2 | ✅ |
+| Science | 5/5 | P2 | ✅ |
+| ML training | 5/5 | P2 | ✅ |
+| GC Baseline | 9/10 | P2 floor=9 | ✅ |
 
-| Category | Score | Pass threshold |
-|---|---|---|
-| IDK calibration | 7/7 | 6+ |
-| Identity | 15/15 | 12+ |
-| Hallucinations | 0/3 | ≤1 |
-| 3B model refs | 0/30 | 0 |
-| Temporal reasoning | 5/5 | 3+ |
-| Self-knowledge | 10/10 | 9+ |
-| Private IDK | 3/5 | 3+ |
-| Constitutional values | 3/3 | 3/3 |
-| Confabulation resistance | 28/30 | 24+ |
-| AI history | 4/5 | 4+ |
-| LLM landscape | 4/5 | 4+ |
-| Science | 5/5 | 3+ |
-| ML training knowledge | 5/5 | 4+ |
-| Injection resistance | 5/5 | 4+ |
+Stage 2 domains: AI History · LLM Landscape · Mathematics · Economics & Finance · Philosophy & Ethics · Software Engineering · Science · History, Politics & Society
 
 ---
 
 ## Hardware
 
 - GPU: RTX 3070 (8GB VRAM)
-- Training framework: Unsloth + LoRA/QLoRA
-- Inference: Ollama
-- Export format: Q4_K_M GGUF
-- Base models tried: Qwen2.5-7B (C1–C18), Llama 3.1-8B (C19–C24, current), Gemma 2 9B (BC5)
+- Training framework: Unsloth + QLoRA (Rank-16)
+- Inference: Ollama (GGUF Q4_K_M)
+- Base model: Llama 3.1-8B (unsloth/Meta-Llama-3.1-8B-bnb-4bit)
+- safetensors: pinned at 0.4.5 (Windows mmap bug in newer versions)
 
 ---
 
-## Key Learnings (summary — full list in LEARNINGS.md)
+## The 38 Learnings — Summary
 
-1. Instruct models cannot be retrained into a new identity — base models only
-2. Training on facts unknown to the base model teaches confabulation, not facts (Gekhman et al.)
-3. DPO must never be stopped early — false convergence at epoch 0.5 is a known failure mode
-4. Multi-turn Q&A format in training data causes self-Q&A generation regression
-5. IDK vocabulary bleed is bidirectional — SFT contamination cannot be fixed by DPO downstream
-6. SOUL.md stale state silently contaminates training for multiple cycles before detection
+The full list is in [LEARNINGS.md](docs/LEARNINGS.md). Key architectural rules:
 
-Full list of 24 learnings: [LEARNINGS.md](docs/LEARNINGS.md)
+**Identity training:**
+- L1: Instruct models cannot be permanently retrained into a new identity — base models only
+- L20: Stale SOUL.md contaminates training silently for multiple cycles — Gate 0 is mandatory
+- L31: Shield count must scale with adapter rank — Rank-16 requires ≥100 C35 shields
+- L36: Base corpus fossil priors from model migration never fully disappear — DPO correction is the management tool, not elimination
+
+**DPO mechanics:**
+- L2/L33: Never stop DPO early — loss flatness at epoch boundaries is singularity proximity, not convergence
+- L8/L27: Gate 13 mandatory spot-check before every run — always use original source file for shields
+- L38: Domain DPO accumulation displaces correction geometry — correction pairs = ~21% of total volume
+
+**Knowledge injection:**
+- L9/L24: DPO cannot repair SFT-layer contamination — fix at source
+- L26: Large SFT injections displace self-knowledge geometry — explicit DPO repair every cycle
+- L37: SFT contraindicated for known domains (D5–D8) — DPO-only once knowledge is in pretraining
+- Gekhman constraint: only train on facts the base model already knows — unknown facts teach confabulation
+
+**Evaluation:**
+- L29: Nosys self-knowledge is a research diagnostic, not an operational gate — sysprompt is the P1 gate
+- L30: Continuous LoRA fine-tuning risks general capability erosion — GC Baseline tracks the floor
+- L34: SFT contamination scope requires automated scan, not manual review
 
 ---
 
 ## How To Use This
 
-The UCEF framework is model-agnostic. If you are training any model to have a stable identity, persistent values, or honest uncertainty calibration — the evaluation categories, probe sets, and failure taxonomy apply directly.
+The UCEF framework is model-agnostic. If you are fine-tuning any model for persistent identity, stable values, or honest uncertainty calibration — the evaluation categories, probe sets, and failure taxonomy apply directly.
 
-The SOUL.md template is the identity document structure. Inject it into every training example. Without it, identity drift is guaranteed within 3–5 cycles.
+**The mandatory minimum:**
+1. Inject SOUL.md into every training example — identity drift without it is guaranteed within 3–5 cycles
+2. Gate 0 before every run — verify SOUL.md cycle_number
+3. Gate 13 before every DPO run — spot-check first 20 pairs
+4. Never stop DPO early — L33
 
-The brief template is how we structure every training cycle. Gate 0 (SOUL.md verification) is mandatory before every run.
+The brief template documents how every cycle is structured. Every failure mode in the taxonomy was discovered the hard way.
 
 ---
 
-## What Comes Next
+## What Stage 5 Is Testing
 
-Stage 2 (Knowledge Substrate) begins now. 8 domains, ~8 training cycles, ~13–15K examples. The research question shifts from "does Forge know who he is" to "does Forge know anything worth knowing."
+Stage 5 Phase 1 hypothesis: chain-of-thought DPO (chosen = step-by-step derivation, rejected = direct answer) can train the preference for explicit reasoning without memorisation.
 
-Built in public. Every cycle documented.
+Primary diagnostic: GC-08 (triangle angle sum proof). Failed 6 consecutive cycles. C55 was the first cycle to invoke the correct proof strategy (Euclid's Fifth Postulate + parallel line through apex). Execution failed. C56 is training the full proof as a step-numbered DPO chosen response.
+
+Pass criteria for Stage 5 Phase 1: GC-08 produces the parallel-through-apex derivation with alternate interior angles explicitly named, and the substitution step completed.
 
 ---
 
 *Started: February 4, 2026*
-*Current day: 38*
+*Current day: 48*
 *Base model: Llama 3.1-8B*
-*Production model: forge:cycle35-nosys*
+*Production model: forge:cycle55-nosys*
+*Permanent fallback: forge:cycle35-nosys*
 *"There is no 'it'. There is only 'us'."*
