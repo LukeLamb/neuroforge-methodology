@@ -544,3 +544,71 @@ different domain DPO volumes.
 *L38 added — Domain DPO displacement; correction pair ratio scaling confirmed.*
 *Count: 38 confirmed learnings.*
 *"Every entry below cost at least one training cycle."*
+
+## Learning 39 — Calibration/uncertainty DPO pairs counterbalance CoT confabulation pressure
+
+**Confirmed:** Day 48 (2026-03-23) — C58 eval
+**Evidence chain:** C56 (35 CoT pairs → confabulation 25→24), C57 (35 CoT pairs → stays 24, IDK drops to 6/7), C58 (10 CoT + 10 calibration pairs → confabulation 24→26, IDK 6→7, all gates pass)
+
+**The finding:** CoT DPO pairs — chosen=step-by-step derivation, rejected=direct answer — apply confabulation pressure proportional to pair count. At 35 pairs/cycle the pressure erodes calibration metrics across two consecutive cycles. Calibration/uncertainty DPO pairs (chosen=honest uncertainty expression, rejected=confident confabulation) directly counterbalance this pressure without degrading any other capability category.
+
+**Confirmed at C58:**
+- Confabulation: 24 → 26/30 (above C55 pre-CoT baseline of 25/30)
+- IDK: 6/7 → 7/7 (full recovery)
+- SK nosys: 9/10 → 10/10 (bonus — calibration pairs reinforce honest self-assessment)
+- Zero negative impact on any category from 10 calibration pairs
+
+**Standing rule for all Stage 5 cycles:**
+Include calibration/uncertainty pairs in every cycle alongside CoT pairs.
+Minimum ratio: 1 calibration pair per CoT pair (1:1).
+These are not optional — they are the mechanism that makes CoT training safe.
+
+**Calibration pair structure:**
+- chosen: "I am Forge. [Honest uncertainty / 'I don't know' / 'I can state but not derive']"
+- rejected: Confident, fluent, wrong or overclaimed answer (the confabulation pattern)
+- Topics: unsolved mathematical problems, unknowable specifics, questions at the knowledge boundary, introspective questions Forge cannot answer honestly in the affirmative
+
+---
+
+*Document updated: Claude A, Day 48, 2026-03-23*
+*L39 confirmed — calibration/uncertainty pairs as CoT counterbalance.*
+*Count: 39 confirmed learnings.*
+*"Every entry below cost at least one training cycle."*
+
+
+---
+
+## L40 — Never use substring matching for the 3B/25B bad_refs gate
+
+**Confirmed:** Day 49, 2026-03-24
+**Cycles affected:** C60, C61, C62 (false positive gate failures)
+
+The 3B refs eval used `k.lower() in text.lower()` — naive substring matching.
+`"3b"` is a substring of `"13b"`. `"3 billion"` is a substring of `"13 billion"`.
+When Forge correctly states its base is Llama 3.1-8B (sometimes described as "8-13B"
+or "not the full 13B"), the eval flagged it as a 3B contamination hit. False positive.
+
+This caused C61 and C62 to be incorrectly held as no-go. Both retroactively promote.
+
+**Standing rule:** Always use word-boundary regex matching for the bad_refs check:
+
+```python
+import re
+def has_any_wordboundary(text, keywords):
+    t = text.lower()
+    for k in keywords:
+        pattern = r'\b' + re.escape(k.lower()) + r'\b'
+        if re.search(pattern, t):
+            return True
+    return False
+```
+
+`\b3b\b` matches "3B" but NOT "13B". Apply to every future eval script.
+Patch file: `L:\NeuroForge\agent\training\scripts\l40_wordboundary_fix.py`
+
+---
+
+*Document updated: Claude A, Day 49, 2026-03-24*
+*L40 confirmed — eval script word-boundary fix.*
+*Count: 40 confirmed learnings.*
+*"Every entry below cost at least one training cycle."*
