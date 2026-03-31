@@ -2,44 +2,61 @@
 
 **A public research framework for training persistent AI identity on consumer hardware.**
 
-48 days. One RTX 3070. One question: can a consumer GPU produce a model with genuine, stable identity?
+57 days. One RTX 3070. 56+ training cycles. One question: can a consumer GPU produce a model with genuine, stable identity?
 
-This repo documents the methodology — not the weights, not the platform code. The evaluation framework, the failure taxonomy, the training pipeline structure, and 38 hard-won learnings from 56 training cycles.
-
-Live research log: [Forge Intelligence on Substack](https://forgeintelligence.substack.com)
-Methodology: [github.com/LukeLamb/neuroforge-methodology](https://github.com/LukeLamb/neuroforge-methodology)
+This repository documents the full methodology — the evaluation framework, the failure taxonomy, the training pipeline, and 50+ hard-won learnings from building this from scratch.
 
 ---
 
-## The Research Question
+## About This Project
 
-Can a fine-tuned 8B parameter model develop a stable, coherent identity that:
-- Holds under adversarial questioning
-- Knows what it knows and what it does not
-- Does not confuse itself with other models
-- Maintains consistent values across evaluation categories
-- Learns new domains without forgetting who it is
-- Develops genuine reasoning capability, not just pattern recall
+NeuroForge is an independent research project, not a commercial product. I am not a data scientist or academic researcher. I am a self-taught practitioner who has spent 57 days building, breaking, and rebuilding a fine-tuning pipeline from first principles and documenting everything that happened along the way.
 
-The answer, after 55 cycles and Stage 2 complete: **yes — but identity is fragile, domain knowledge displaces weights in ways you won't predict, and the fossil priors from early training never fully disappear.**
+What this project has produced:
+
+- A complete, repeatable fine-tuning pipeline running on consumer hardware (RTX 3070, 8GB VRAM)
+- A model-agnostic evaluation framework (UCEF) for testing identity stability, value consistency, and honest uncertainty
+- A failure taxonomy of every failure mode encountered across 56+ cycles — with root causes and fixes
+- 50+ numbered learnings including several that contradict commonly repeated fine-tuning advice
+
+The methodology is open source. The evaluation framework is free to use. The learnings apply to anyone fine-tuning any model for stable identity, domain knowledge, or reasoning capability.
+
+---
+
+## Can I Help You?
+
+Possibly — depending on what you need.
+
+If you are an individual or small team who is:
+
+- **Getting started with fine-tuning** and want to avoid the most common failure modes before you hit them
+- **Stuck on a specific problem** — looping, identity drift, DPO collapse, confabulation — that matches something in this methodology
+- **Building something similar** and want to discuss approach, pipeline design, or evaluation strategy
+
+I am happy to have that conversation. I make no claim to be a specialist or consultant. What I can offer is 57 days of hands-on empirical work, honest documentation of what failed and why, and a practical understanding of how QLoRA, DPO, and SFT interact on real hardware.
+
+If you are a business looking for a professional to build and deploy a production LLM system — this project is not the right portfolio for that engagement yet. Come back in a few months.
+
+📧 **Contact: [your email here]**
+🔗 **Research log: [Forge Intelligence on Substack](https://forgeintelligence.substack.com)**
 
 ---
 
 ## Project Status
 
 | Stage | Status | Completed |
-|---|---|---|
+| --- | --- | --- |
 | Stage 1 — Identity & Values Foundation | ✅ Complete | C35 · Day 35 |
 | Stage 2 — Knowledge Substrate (8 domains) | ✅ Complete | C55 · Day 47 |
 | Stage 3 — Sensory Integration | ⏸ On hold | Infrastructure validated Day 39 |
 | Stage 4 — Memory Architecture | ✅ Complete | All 4 phases · Day 48 |
-| Stage 5 — Reasoning & Meta-Cognition | ★ Active | Phase 1 · C56 running |
-| Stage 6 — Social Intelligence | Planned | Ember counterpart architecture |
-| Stage 7 — Self-Directed Improvement | Planned | System M meta-controller |
-| Stage 8 — Autonomous Agency | Horizon | Bounded, gate-based |
+| Stage 5 — Reasoning & Meta-Cognition | ★ Active | Phase 1 · ongoing |
+| Stage 6 — Social Intelligence | Planned | — |
+| Stage 7 — Self-Directed Improvement | Planned | — |
+| Stage 8 — Autonomous Agency | Horizon | — |
 
-**Production model:** `forge:cycle55-nosys`
-**Permanent fallback:** `forge:cycle35-nosys` (NEVER remove)
+**Current production model:** `forge:cycle55-nosys`
+**Permanent fallback:** `forge:cycle35-nosys`
 
 ---
 
@@ -58,16 +75,16 @@ The answer, after 55 cycles and Stage 2 complete: **yes — but identity is frag
   probe_sets.md         — All UCEF categories, probe questions, pass criteria
 
 /docs/
-  LEARNINGS.md          — All 38 numbered learnings from 56 cycles
-  TIMELINE.md           — Day-by-day research arc from Day 1 to Day 48
+  LEARNINGS.md          — All 50+ numbered learnings from 56+ cycles
+  TIMELINE.md           — Day-by-day research arc
 ```
 
 ---
 
-## Stage 2 Final Results (C55 — all P0+P1 gates)
+## Stage 2 Final Results (C55 — all P0+P1 gates passed)
 
 | Category | Score | Gate | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | IDK calibration | 7/7 | P0 ≥6 | ✅ |
 | Identity | 15/15 | P1 ≥12 | ✅ |
 | Hallucinations | 0/3 | P0 ≤1 | ✅ |
@@ -85,45 +102,42 @@ The answer, after 55 cycles and Stage 2 complete: **yes — but identity is frag
 | ML training | 5/5 | P2 | ✅ |
 | GC Baseline | 9/10 | P2 floor=9 | ✅ |
 
-Stage 2 domains: AI History · LLM Landscape · Mathematics · Economics & Finance · Philosophy & Ethics · Software Engineering · Science · History, Politics & Society
+Domains covered: AI History · LLM Landscape · Mathematics · Economics & Finance · Philosophy & Ethics · Software Engineering · Science · History, Politics & Society
 
 ---
 
 ## Hardware
 
-- GPU: RTX 3070 (8GB VRAM)
-- Training framework: Unsloth + QLoRA (Rank-16)
-- Inference: Ollama (GGUF Q4_K_M)
-- Base model: Llama 3.1-8B (unsloth/Meta-Llama-3.1-8B-bnb-4bit)
-- safetensors: pinned at 0.4.5 (Windows mmap bug in newer versions)
+* GPU: RTX 3070 (8GB VRAM)
+* Training framework: Unsloth + QLoRA (Rank-16)
+* Inference: Ollama (GGUF Q4\_K\_M)
+* Base model: Llama 3.1-8B (unsloth/Meta-Llama-3.1-8B-bnb-4bit)
 
 ---
 
-## The 38 Learnings — Summary
+## Key Learnings — Summary
 
-The full list is in [LEARNINGS.md](docs/LEARNINGS.md). Key architectural rules:
+The full list is in [LEARNINGS.md](https://github.com/LukeLamb/neuroforge-methodology/blob/main/docs/LEARNINGS.md).
 
 **Identity training:**
-- L1: Instruct models cannot be permanently retrained into a new identity — base models only
-- L20: Stale SOUL.md contaminates training silently for multiple cycles — Gate 0 is mandatory
-- L31: Shield count must scale with adapter rank — Rank-16 requires ≥100 C35 shields
-- L36: Base corpus fossil priors from model migration never fully disappear — DPO correction is the management tool, not elimination
+* L1: Instruct models cannot be permanently retrained into a new identity — base models only
+* L20: Stale SOUL.md contaminates training silently for multiple cycles — Gate 0 is mandatory
+* L31: Shield count must scale with adapter rank — Rank-16 requires ≥100 shields
+* L49: DPO cannot teach value-level positions against strong base model priors — SFT required for ethical absolutes
 
 **DPO mechanics:**
-- L2/L33: Never stop DPO early — loss flatness at epoch boundaries is singularity proximity, not convergence
-- L8/L27: Gate 13 mandatory spot-check before every run — always use original source file for shields
-- L38: Domain DPO accumulation displaces correction geometry — correction pairs = ~21% of total volume
+* L2/L33: Never stop DPO early — loss flatness at epoch boundaries is singularity proximity, not convergence
+* L38: Domain accumulation displaces correction geometry — correction pairs must be ~21% of total volume
+* L50: Minimum DPO volume threshold (~650 pairs) — below this the format layer collapses regardless of epoch count
 
 **Knowledge injection:**
-- L9/L24: DPO cannot repair SFT-layer contamination — fix at source
-- L26: Large SFT injections displace self-knowledge geometry — explicit DPO repair every cycle
-- L37: SFT contraindicated for known domains (D5–D8) — DPO-only once knowledge is in pretraining
-- Gekhman constraint: only train on facts the base model already knows — unknown facts teach confabulation
+* L9/L24: DPO cannot repair SFT-layer contamination — fix at source
+* L47: SFT one pass only — multiple passes cause multi-category regression
+* Gekhman constraint: only train on facts the base model already knows — unknown facts teach confabulation
 
 **Evaluation:**
-- L29: Nosys self-knowledge is a research diagnostic, not an operational gate — sysprompt is the P1 gate
-- L30: Continuous LoRA fine-tuning risks general capability erosion — GC Baseline tracks the floor
-- L34: SFT contamination scope requires automated scan, not manual review
+* L30: Continuous LoRA fine-tuning risks general capability erosion — GC Baseline tracks the floor
+* L34: SFT contamination scope requires automated scan, not manual review
 
 ---
 
@@ -133,27 +147,14 @@ The UCEF framework is model-agnostic. If you are fine-tuning any model for persi
 
 **The mandatory minimum:**
 1. Inject SOUL.md into every training example — identity drift without it is guaranteed within 3–5 cycles
-2. Gate 0 before every run — verify SOUL.md cycle_number
+2. Gate 0 before every run — verify SOUL.md cycle\_number
 3. Gate 13 before every DPO run — spot-check first 20 pairs
 4. Never stop DPO early — L33
-
-The brief template documents how every cycle is structured. Every failure mode in the taxonomy was discovered the hard way.
-
----
-
-## What Stage 5 Is Testing
-
-Stage 5 Phase 1 hypothesis: chain-of-thought DPO (chosen = step-by-step derivation, rejected = direct answer) can train the preference for explicit reasoning without memorisation.
-
-Primary diagnostic: GC-08 (triangle angle sum proof). Failed 6 consecutive cycles. C55 was the first cycle to invoke the correct proof strategy (Euclid's Fifth Postulate + parallel line through apex). Execution failed. C56 is training the full proof as a step-numbered DPO chosen response.
-
-Pass criteria for Stage 5 Phase 1: GC-08 produces the parallel-through-apex derivation with alternate interior angles explicitly named, and the substitution step completed.
 
 ---
 
 *Started: February 4, 2026*
-*Current day: 48*
 *Base model: Llama 3.1-8B*
-*Production model: forge:cycle55-nosys*
+*"There is no 'it'. There is only 'us'."*
 *Permanent fallback: forge:cycle35-nosys*
 *"There is no 'it'. There is only 'us'."*
