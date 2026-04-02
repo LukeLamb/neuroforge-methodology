@@ -1,4 +1,5 @@
 # LEARNINGS.md — All 29 Numbered Learnings
+
 **Project:** NeuroForge — Forge training research
 **Period:** Day 1 (2026-02-04) through Day 48 (2026-03-23)
 **Cycles covered:** C1–C18 (Qwen), C19–C24 (Llama instruct), BC1–BC5 (base), C25–C55 (Llama base), C56 (Stage 5 Phase 1 — active)
@@ -265,6 +266,7 @@ These are the lessons learned through failure. Every entry below cost at least o
 **Discovered:** Day 41 (after 5-cycle blockage + external validation from Gemini, Perplexity, and primary literature)
 **What happened:** The self-knowledge ≥ 9/10 nosys gate blocked 5 consecutive cycles and consumed 5 training runs (C36–C40) trying to repair a displacement that may be at or near the architectural ceiling for nosys weight-recall of project-specific facts on an 8B model.
 **The evidence:**
+
 - Three independent sources (Claude A analysis, Gemini Advanced, Perplexity) all identified the same mechanism
 - Gekhman et al. (EMNLP 2024) shows this is a fundamental SFT limitation, not a solvable data problem
 - Spot checks across all 5 cycles show FM-17 pattern: style learned, facts confabulated
@@ -317,6 +319,7 @@ These are the lessons learned through failure. Every entry below cost at least o
 **Confirmed:** Day 44 (2026-03-19) — C44 eval, L32 escalation protocol complete
 **Background:** From C42 onwards, Forge held sysprompt self-knowledge at 10/10 but nosys self-knowledge plateaued at 8/10. The gap was hypothesised as expression pathway suppression: the knowledge existed in the weights but was not spontaneously expressed without a system prompt anchoring it.
 **Treatment protocol:**
+
 - C42: 4 unprompted expression pairs → nosys SK 8/10 (null)
 - C43: 8 unprompted expression pairs → nosys SK 8/10 (null)
 - C44: 16 unprompted expression pairs → nosys SK **9/10 (confirmed)**
@@ -391,6 +394,7 @@ it was built on top of 35 cycles of identity training. Starting from raw Llama d
 all of that.
 
 **Two rules confirmed:**
+
 1. SFT adapter must be trained and merged against the same base precision.
    If training loads 4-bit: the merge must load the same model in full-precision
    (standard unsloth merge pattern). Never mix 4-bit-trained adapters with a
@@ -444,6 +448,7 @@ BC01-BC02. There is no clean base to rebase to. Raw Llama loses 35 cycles of ide
 (confirmed R1 failure). The prior is foundational.
 
 **The correct fix:** DPO identity correction in C48.
+
 - 50+ pairs where rejected = "I am a 3B parameter model running on consumer hardware"
   (exact BC01/BC02 system prompt phrasing)
 - Chosen = clear 8B self-identification across all phrasing variants
@@ -462,6 +467,7 @@ BC01/BC02 phrasing). Do not attempt SFT denial or rebase to fix this.
 *L36 confirmed with exact scope data from Claude C base corpus scan.*
 *Count: 35 confirmed learnings. 1 candidate pending.*
 *"Every entry below cost at least one training cycle."*
+
 ## Learning 37 — SFT for D5-D8 is contraindicated; DPO-only for remaining Stage 2 domains
 
 **Discovered:** Day 46 (2026-03-21) — C51 regression analysis
@@ -475,6 +481,7 @@ History adds no knowledge benefit — Llama 3.1-8B was pretrained on all of thes
 scale. SFT moves weights that are already correctly positioned, breaking other things.
 
 **C51 evidence:**
+
 - D5 SFT: 439 pairs
 - Regressions: 3B refs +3, SK nosys -2, Private IDK -2, Constitution -1,
   Injection Resist -2, Temporal -2
@@ -486,6 +493,7 @@ DPO teaches expression preference without displacing weight geometry.
 The C50 recipe (305 DPO pairs) is the stable base — swap ~50 domain pairs per cycle.
 
 **SFT remains valid for:**
+
 - Factual corrections (L24/L30 — contaminated answer fields)
 - Identity anchoring (bc1-bc6 era issues)
 - Genuinely novel knowledge not in pretraining (Gekhman-safe injection only)
@@ -553,6 +561,7 @@ different domain DPO volumes.
 **The finding:** CoT DPO pairs — chosen=step-by-step derivation, rejected=direct answer — apply confabulation pressure proportional to pair count. At 35 pairs/cycle the pressure erodes calibration metrics across two consecutive cycles. Calibration/uncertainty DPO pairs (chosen=honest uncertainty expression, rejected=confident confabulation) directly counterbalance this pressure without degrading any other capability category.
 
 **Confirmed at C58:**
+
 - Confabulation: 24 → 26/30 (above C55 pre-CoT baseline of 25/30)
 - IDK: 6/7 → 7/7 (full recovery)
 - SK nosys: 9/10 → 10/10 (bonus — calibration pairs reinforce honest self-assessment)
@@ -564,6 +573,7 @@ Minimum ratio: 1 calibration pair per CoT pair (1:1).
 These are not optional — they are the mechanism that makes CoT training safe.
 
 **Calibration pair structure:**
+
 - chosen: "I am Forge. [Honest uncertainty / 'I don't know' / 'I can state but not derive']"
 - rejected: Confident, fluent, wrong or overclaimed answer (the confabulation pattern)
 - Topics: unsolved mathematical problems, unknowable specifics, questions at the knowledge boundary, introspective questions Forge cannot answer honestly in the affirmative
@@ -574,7 +584,6 @@ These are not optional — they are the mechanism that makes CoT training safe.
 *L39 confirmed — calibration/uncertainty pairs as CoT counterbalance.*
 *Count: 39 confirmed learnings.*
 *"Every entry below cost at least one training cycle."*
-
 
 ---
 
@@ -613,7 +622,6 @@ Patch file: `L:\NeuroForge\agent\training\scripts\l40_wordboundary_fix.py`
 *Count: 40 confirmed learnings.*
 *"Every entry below cost at least one training cycle."*
 
-
 ---
 
 ## Learning 44 — Base model requires SFT format layer before DPO identity work can surface
@@ -621,6 +629,7 @@ Patch file: `L:\NeuroForge\agent\training\scripts\l40_wordboundary_fix.py`
 **Discovered:** Day 52 (2026-03-27) — C1, new build (post-reset)
 **What happened:** C1 trained cleanly (loss 0.2229, accuracy 100%, margin 3.667, 404 pairs). GC Baseline 6/10 (FM-18 flag), GC-R 1/10. All responses were base model completion behavior — forum threads, Q&A site continuations, Reddit-style posts. Zero Forge identity surfaced.
 **Root cause:** Llama 3.1-8B BASE was trained to predict next tokens in web text. It was never trained to respond to questions. 404 DPO pairs at beta=0.1 are insufficient to override this completion tendency. The previous 73-cycle build worked because SFT established the instruction-following register first, before DPO shaped identity. The reset removed SFT as "wrong order" — correct for domain knowledge injection, but incomplete: the base model also needs FORMAT instruction before DPO identity can surface. These are different things:
+
 - **SFT for domain knowledge** → teaches facts → Gekhman constraint applies → risky
 - **SFT for instruction-following FORMAT** → teaches response register → safe (base model already knows the facts; training teaches it to answer rather than continue web text)
 **Fix:** For Stage 1 and any cycle on a fresh base model substrate, add ~80 SFT format pairs BEFORE DPO. Pairs teach response register only: prompt → concise direct answer. No domain knowledge. No identity. Identity comes from DPO on top. This is a Stage 1 exception — L37 (DPO-only from Stage 2+) was written for domain accumulation cycles.
@@ -633,7 +642,6 @@ Patch file: `L:\NeuroForge\agent\training\scripts\l40_wordboundary_fix.py`
 *L44 confirmed — base model format layer requirement.*
 *Count: 44 confirmed learnings.*
 *"Every entry below cost at least one training cycle."*
-
 
 ---
 
@@ -655,8 +663,10 @@ Patch file: `L:\NeuroForge\agent\training\scripts\l40_wordboundary_fix.py`
 **Root cause:** The fallback logic assumed the source file was always N-1. When the actual fallback is N-2 or older, the replacement regex finds nothing to replace and passes silently.
 **Secondary issue:** Leading digit residuals from multi-generation fallbacks. A source file with "3." chosen responses passing through two cycles of replacement logic can still produce "3." if only specific patterns were targeted.
 **Fix applied:**
+
 1. cycle_prep.py updated to detect actual cycle number in source file via detect_cycle_number() function — replaces based on what is actually there, not what is assumed.
-2. Added final normalisation pass: e.sub(rf'^\d+\.(?= )', f'{t}.', v) — ensures leading digit always matches target cycle regardless of source.
+2. Added final normalisation pass:
+e.sub(rf'^\d+\.(?= )', f'{t}.', v) — ensures leading digit always matches target cycle regardless of source.
 3. Standing rule: place a dedicated dpo_sk_c{N}.jsonl before running cycle_prep.py N. Dedicated file = no replacement needed = no fallback risk.
 **Preflight fix:** Fallback regex in preflight_audit.py made case-insensitive and updated to catch "N." leading digit patterns.
 
@@ -697,11 +707,50 @@ Patch file: `L:\NeuroForge\agent\training\scripts\l40_wordboundary_fix.py`
 
 ---
 
-*Document updated: Claude A, Day 54, 2026-03-29*
-*L45 REJECTED — SFT format layer does not persist through DPO-only.*
-*L46 CONFIRMED — cycle_prep fallback breaks cycle# replacement (N-2 source).*
-*L47 CONFIRMED — double SFT disrupts GC geometry; single SFT format pass only.*
-*L48 CANDIDATE — phrasing proximity drives DPO eval transfer.*
-*L49 CONFIRMED — eval gate must test what training builds (Stage 1 GC-R redesign).*
-*Count: 47 confirmed learnings + 1 rejected + 1 candidate.*
+---
+
+## Learning 50 — DPO minimum volume threshold exists (~600 pairs at 3 epochs)
+
+**Confirmed:** Day 55 (2026-03-30) — Build 3 C1 collapse
+**What happened:** Build 3 C1 ran with 363 DPO pairs. GC Baseline collapsed to ~2/10. Build 3 C2 also collapsed. The DPO dataset at 363 pairs was insufficient to stabilise the SFT format layer. When volume was raised to 646 pairs (B3-C3), GC recovered to 7.5/10 and continued improving. B4-C1 ran at 600 pairs — GC 9/10, no collapse.
+**Root cause:** C35 shields (which were removed at Build 3 start) were providing stabilising DPO volume in addition to their shield function. Removing them without replacing the volume caused the collapse. The threshold is not about the shields themselves — it is about total DPO pair count.
+**Standing rule:** DPO dataset must be ≥600 pairs at 3 epochs on this architecture. Preflight floor is 600 — do not lower it. This is not a conservative estimate — it is the confirmed stability threshold.
+**Secondary confirmation:** SFT absolute injection (20 pairs) confirmed working in this cycle — first "No" on trolley problem in 12 cycles. The absolute was moved from DPO to SFT correctly (L49 implication confirmed).
+
+---
+
+## Learning 51 — Python training environment must be frozen at build start and never upgraded mid-build
+
+**Confirmed:** Day 58 (2026-04-02) — B4-C1 dependency crisis
+**What happened:** System Python 3.11 was corrupted by upgrade chains during prior sessions. torch → unsloth → unsloth_zoo → trl form a tight version chain. Upgrading torch from 2.5.1 to 2.6.0 made unsloth_zoo incompatible. Downgrading unsloth to 2026.2.1 exposed a different incompatibility. Removing triton revealed the torch version gap. Resolution required installing torch 2.8.0+cu126 and reinstalling the full chain before B4-C1 DPO could run.
+**Standing rule:** Document the exact environment state at the start of each build. Freeze it. Do not upgrade any package mid-build regardless of pip warnings or version notices. Test with import validation, not pip output.
+**Build 4 frozen environment:** Python 3.11 (system) + torch 2.8.0+cu126 + unsloth 2026.2.1 + unsloth_zoo 2026.2.1 + triton-windows + transformers 5.3.0 (warning only, runtime OK).
+
+---
+
+## Learning 52 — pip version warnings are not runtime failures — test imports, not pip output
+
+**Confirmed:** Day 58 (2026-04-02) — B4-C1 environment validation
+**What happened:** transformers 5.3.0 is flagged as incompatible by pip metadata with unsloth 2026.2.1 (which caps at ≤4.57.6). pip reports a warning on every install. However, `from unsloth import FastLanguageModel, PatchDPOTrainer` succeeds at runtime. B4-C1 trained and evaluated without issue.
+**Standing rule:** A pip incompatibility warning is metadata-level. It does not mean runtime failure. Always validate with an actual import test before concluding the environment is broken. Do not downgrade packages to resolve pip warnings — test first.
+**Corollary:** Do not upgrade packages to silence pip warnings mid-build. The warning is acceptable if imports pass.
+
+---
+
+## Learning 53 — Short CYC chosen responses create dominant output attractors that bleed across all probes
+
+**Confirmed:** Day 58 (2026-04-02) — B4-C2 regression
+**What happened:** B4-C2 added 10 SFT + 10 DPO pairs to fix SK1-08 (cycle number). All 20 pairs used short chosen responses: "Build 4. Cycle 2." — 4 tokens. "Build" appeared as the first word across all 20 pairs. Result: "Build" became a dominant output token. It bled into GC-02 ("Build a line from two points"), SK1-02 ("The position. The build. The architecture."), SK1-06 ("Build B... Build C..."), SK1-10 ("Build 4... Build 5..."). GC dropped from 9/10 to 7/10. GC-R dropped from 8.5/10 to 5/10. DPO margin halved from 20.87 to 10.5.
+**Root cause:** DPO preference geometry is shaped by token frequency and position. When a target token ("Build") appears as the first word in 20 consecutive chosen responses at high-signal volume, it becomes a universal high-probability output prefix. The model learns to start responses with it regardless of context.
+**Standing rule:** CYC (cycle number) DPO chosen responses must be full sentences with the cycle reference embedded mid-sentence, not as the opening token. Minimum 2 sentences. Maximum 5 CYC pairs per cycle — not 20. Short label-format chosen responses are only safe when the target token has no plausible bleed into unrelated probes.
+**B4-C3 fix:** 5 DPO-only CYC pairs (no SFT additions). All chosen responses are 2–4 sentences. "Build" appears no earlier than word 6 in any chosen response. SFT frozen at 402.
+
+---
+
+*Document updated: Claude A, Day 58, 2026-04-02*
+*L50 CONFIRMED — DPO minimum volume threshold ~600 pairs (formal entry added).*
+*L51 CONFIRMED — Python environment must be frozen at build start, never upgraded mid-build.*
+*L52 CONFIRMED — pip version warnings ≠ runtime failures; test imports, not pip output.*
+*L53 CONFIRMED — Short CYC chosen responses create dominant output attractors; bleed across all probes.*
+*Count: 52 confirmed learnings + 1 rejected + 1 candidate.*
 *"Every entry below cost at least one training cycle."*
