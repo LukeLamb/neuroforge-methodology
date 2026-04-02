@@ -1,4 +1,4 @@
-# LEARNINGS.md — All 29 Numbered Learnings
+# LEARNINGS.md — All 53 Numbered Learnings
 
 **Project:** NeuroForge — Forge training research
 **Period:** Day 1 (2026-02-04) through Day 48 (2026-03-23)
