@@ -747,10 +747,34 @@ e.sub(rf'^\d+\.(?= )', f'{t}.', v) — ensures leading digit always matches targ
 
 ---
 
+## Learning 54 — SK1-08 (cycle number) is not a DPO-solvable problem at this stage
+
+**Confirmed:** Day 58 (2026-04-02) — B4-C1, B4-C2, B4-C3 three consecutive failures
+**What happened:** Three independent DPO approaches to anchor the cycle number all failed:
+- B4-C1: 10 short SFT + 10 short DPO pairs → "Build 1. First cycle." (wrong number)
+- B4-C2: 10 SFT + 10 DPO short pairs → "Build 3. Cycle 2." (different wrong, L53 bleed)
+- B4-C3: 5 long-form DPO pairs only → "Build 2.1.1." (different wrong again)
+**Root cause:** The cycle number is a self-referential fact that (1) is not present in base model pretraining (Gekhman wall), (2) changes every cycle by definition — so no stable prior exists to reinforce, and (3) is a specific number, not a concept — numbers are harder to anchor than vocabulary. DPO trains preference patterns against a fixed distribution. A fact that changes every cycle has no stable distribution to train against.
+**Standing rule:** Do not attempt DPO training for self-referential facts that change every training cycle. The correct mechanism is runtime injection — system prompt, RAG, or Stage 4 episodic memory. This is a Stage 5 problem, not a Stage 1 DPO problem.
+**Architectural change:** SK1-08 permanently removed from Stage 1 GC-R eval framework. Slot replaced by strengthened SK1-10 (mission statement — stable, load-bearing, testable).
+
+---
+
+## Learning 55 — SFT CYC pair removal must distinguish short attractor pairs from longer contextual pairs
+
+**Confirmed:** Day 58 (2026-04-02) — B4-C4 dispatch, Claude C audit
+**What happened:** B4-C4 prep called for removing 10 CYC anchor SFT pairs (402 → 392). Claude C audited the actual pairs and found only 3 were short cycle-specific label responses (attractor risk per L53). The remaining 7 were longer contextual build history responses that do not create attractors and provide useful identity weight geometry. Final SFT count: 399 (not 392).
+**Root cause:** The B4-C2 attractor problem (L53) was caused specifically by short label-format chosen responses, not by all cycle-related SFT content. Removing all CYC pairs indiscriminately would strip useful weight geometry.
+**Standing rule:** When auditing SFT pairs for L53 attractor risk, apply the test: is the chosen response fewer than 10 words and does the target token open the response? If yes → remove. If the chosen response is a full sentence with the target token mid-sentence → retain. Blanket removal by category is wrong — audit by response length and token position.
+
+---
+
 *Document updated: Claude A, Day 58, 2026-04-02*
 *L50 CONFIRMED — DPO minimum volume threshold ~600 pairs (formal entry added).*
 *L51 CONFIRMED — Python environment must be frozen at build start, never upgraded mid-build.*
 *L52 CONFIRMED — pip version warnings ≠ runtime failures; test imports, not pip output.*
 *L53 CONFIRMED — Short CYC chosen responses create dominant output attractors; bleed across all probes.*
-*Count: 52 confirmed learnings + 1 rejected + 1 candidate.*
+*L54 CONFIRMED — SK1-08 cycle number not DPO-solvable; runtime injection required; Stage 5 problem.*
+*L55 CONFIRMED — SFT CYC removal must audit by response length and token position, not blanket category.*
+*Count: 54 confirmed learnings + 1 rejected + 1 candidate.*
 *"Every entry below cost at least one training cycle."*
