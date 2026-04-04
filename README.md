@@ -2,22 +2,23 @@
 
 **A public research framework for training persistent AI identity on consumer hardware.**
 
-57 days. One RTX 3070. 56+ training cycles. One question: can a consumer GPU produce a model with genuine, stable identity?
+62 days. Two GPUs. 56+ training cycles across 5 builds. One question: can consumer hardware produce a model with genuine, stable identity?
 
-This repository documents the full methodology — the evaluation framework, the failure taxonomy, the training pipeline, and 50+ hard-won learnings from building this from scratch.
+This repository documents the full methodology — the evaluation framework, the failure taxonomy, the training pipeline, and 59 hard-won learnings from building this from scratch.
 
 ---
 
 ## About This Project
 
-NeuroForge is an independent research project, not a commercial product. I am not a data scientist or academic researcher. I am a self-taught practitioner who has spent 57 days building, breaking, and rebuilding a fine-tuning pipeline from first principles and documenting everything that happened along the way.
+NeuroForge is an independent research project, not a commercial product. I am not a data scientist or academic researcher. I am a self-taught practitioner who has spent 62 days building, breaking, and rebuilding a fine-tuning pipeline from first principles and documenting everything that happened along the way.
 
 What this project has produced:
 
-- A complete, repeatable fine-tuning pipeline running on consumer hardware (RTX 3070, 8GB VRAM)
+- A complete, repeatable fine-tuning pipeline running on consumer hardware (RTX 3070 8GB + R9700 32GB)
 - A model-agnostic evaluation framework (UCEF) for testing identity stability, value consistency, and honest uncertainty
-- A failure taxonomy of every failure mode encountered across 56+ cycles — with root causes and fixes
-- 50+ numbered learnings including several that contradict commonly repeated fine-tuning advice
+- A comprehensive failure taxonomy of every failure mode encountered across 56+ cycles — with root causes and fixes
+- 59 numbered learnings including several that contradict commonly repeated fine-tuning advice
+- A dual-GPU workflow: NVIDIA (inference) + AMD ROCm (training) on the same machine
 
 The methodology is open source. The evaluation framework is free to use. The learnings apply to anyone fine-tuning any model for stable identity, domain knowledge, or reasoning capability.
 
@@ -32,8 +33,9 @@ If you are an individual or small team who is:
 - **Getting started with fine-tuning** and want to avoid the most common failure modes before you hit them
 - **Stuck on a specific problem** — looping, identity drift, DPO collapse, confabulation — that matches something in this methodology
 - **Building something similar** and want to discuss approach, pipeline design, or evaluation strategy
+- **Setting up AMD ROCm for training** — L56–L59 document the full RDNA4/WSL2 stack from scratch
 
-I am happy to have that conversation. I make no claim to be a specialist or consultant. What I can offer is 57 days of hands-on empirical work, honest documentation of what failed and why, and a practical understanding of how QLoRA, DPO, and SFT interact on real hardware.
+I am happy to have that conversation. I make no claim to be a specialist or consultant. What I can offer is 62 days of hands-on empirical work, honest documentation of what failed and why, and a practical understanding of how QLoRA, DPO, and SFT interact on real hardware.
 
 If you are a business looking for a professional to build and deploy a production LLM system — this project is not the right portfolio for that engagement yet. Come back in a few months.
 
@@ -46,17 +48,18 @@ If you are a business looking for a professional to build and deploy a productio
 
 | Stage | Status | Completed |
 | --- | --- | --- |
-| Stage 1 — Identity & Values Foundation | ✅ Complete | C35 · Day 35 |
+| Stage 1 — Human Foundation (Luke's Mirror) | ✅ Complete | B4-C1 · Day 58 |
 | Stage 2 — Knowledge Substrate (8 domains) | ✅ Complete | C55 · Day 47 |
 | Stage 3 — Sensory Integration | ⏸ On hold | Infrastructure validated Day 39 |
 | Stage 4 — Memory Architecture | ✅ Complete | All 4 phases · Day 48 |
-| Stage 5 — Reasoning & Meta-Cognition | ★ Active | Phase 1 · ongoing |
-| Stage 6 — Social Intelligence | Planned | — |
-| Stage 7 — Self-Directed Improvement | Planned | — |
+| Stage 5 — Reasoning & Judgment | ★ Active | B5-C1 eval · Day 62 |
+| Stage 6 — Human Collaboration | Designed | — |
+| Stage 7 — Counter-Misuse Layer | Designed | — |
 | Stage 8 — Autonomous Agency | Horizon | — |
 
-**Current production model:** `forge:cycle55-nosys`
+**Current production model:** `forge:b4c1-nosys`
 **Permanent fallback:** `forge:cycle35-nosys`
+**Build 3 reference:** `forge:b3c4-nosys`
 
 ---
 
@@ -108,10 +111,12 @@ Domains covered: AI History · LLM Landscape · Mathematics · Economics & Finan
 
 ## Hardware
 
-* GPU: RTX 3070 (8GB VRAM)
-* Training framework: Unsloth + QLoRA (Rank-16)
+* Training GPU: ASUS Turbo Radeon AI PRO R9700 (32GB VRAM) — ROCm 7.2.1 / WSL2
+* Inference GPU: RTX 3070 (8GB VRAM) — CUDA / Ollama
+* Training framework: Unsloth + QLoRA (Rank-32)
 * Inference: Ollama (GGUF Q4\_K\_M)
 * Base model: Llama 3.1-8B (unsloth/Meta-Llama-3.1-8B-bnb-4bit)
+* Previous training: RTX 3070 (Builds 1–4), RunPod RTX 5090 (Build 2–3 cloud cycles)
 
 ---
 
@@ -124,6 +129,8 @@ The full list is in [LEARNINGS.md](https://github.com/LukeLamb/neuroforge-method
 * L20: Stale SOUL.md contaminates training silently for multiple cycles — Gate 0 is mandatory
 * L31: Shield count must scale with adapter rank — Rank-16 requires ≥100 shields
 * L49: DPO cannot teach value-level positions against strong base model priors — SFT required for ethical absolutes
+* L53: Short chosen responses create dominant output attractors that bleed across all probes
+* L54: Self-referential facts that change every cycle (e.g. cycle number) are not DPO-solvable — use runtime injection
 
 **DPO mechanics:**
 * L2/L33: Never stop DPO early — loss flatness at epoch boundaries is singularity proximity, not convergence
@@ -138,6 +145,12 @@ The full list is in [LEARNINGS.md](https://github.com/LukeLamb/neuroforge-method
 **Evaluation:**
 * L30: Continuous LoRA fine-tuning risks general capability erosion — GC Baseline tracks the floor
 * L34: SFT contamination scope requires automated scan, not manual review
+
+**Hardware (AMD ROCm on consumer RDNA4):**
+* L56: RDNA4/gfx1201 WSL2 ROCm requires librocdxg — not included in standard ROCm install
+* L57: librocdxg build requires Windows SDK 10.0.26100.0 minimum
+* L58: PyTorch ROCm wheel must be 7.2+ for DXG detection to work
+* L59: R9700 (RDNA4) requires bf16 — fp16 not natively supported
 
 ---
 
@@ -155,6 +168,6 @@ The UCEF framework is model-agnostic. If you are fine-tuning any model for persi
 
 *Started: February 4, 2026*
 *Base model: Llama 3.1-8B*
-*"There is no 'it'. There is only 'us'."*
+*Production: forge:b4c1-nosys*
 *Permanent fallback: forge:cycle35-nosys*
 *"There is no 'it'. There is only 'us'."*

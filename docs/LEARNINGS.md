@@ -1,8 +1,8 @@
-# LEARNINGS.md — All 53 Numbered Learnings
+# LEARNINGS.md — All 59 Numbered Learnings
 
 **Project:** NeuroForge — Forge training research
-**Period:** Day 1 (2026-02-04) through Day 48 (2026-03-23)
-**Cycles covered:** C1–C18 (Qwen), C19–C24 (Llama instruct), BC1–BC5 (base), C25–C55 (Llama base), C56 (Stage 5 Phase 1 — active)
+**Period:** Day 1 (2026-02-04) through Day 62 (2026-04-04)
+**Cycles covered:** C1–C18 (Qwen), C19–C24 (Llama instruct), BC1–BC5 (base), C25–C55 (Llama base), C56–C73 (Stage 5), Build 1–5 (post-reset)
 
 ---
 
@@ -777,4 +777,60 @@ e.sub(rf'^\d+\.(?= )', f'{t}.', v) — ensures leading digit always matches targ
 *L54 CONFIRMED — SK1-08 cycle number not DPO-solvable; runtime injection required; Stage 5 problem.*
 *L55 CONFIRMED — SFT CYC removal must audit by response length and token position, not blanket category.*
 *Count: 54 confirmed learnings + 1 rejected + 1 candidate.*
+*"Every entry below cost at least one training cycle."*
+
+---
+
+## Learning 56 — RDNA4/gfx1201 WSL2 ROCm requires librocdxg — not included in standard ROCm install
+
+**Confirmed:** Day 60 (2026-04-03) — R9700 activation
+**What happened:** After installing ROCm 7.2.1 via `amdgpu-install --usecase=rocm`, PyTorch could not detect the R9700 GPU in WSL2. `rocm-smi` reported "driver not initialized." The standard ROCm WSL2 documentation did not mention this dependency.
+**Root cause:** RDNA4 architecture (gfx1201) uses the DXG (DirectX Graphics) kernel interface for WSL2 GPU passthrough. This requires librocdxg — an open-source bridge library maintained at AMD ROCm/librocdxg. It is not bundled with the standard ROCm 7.x apt install. Without it, WSL2 cannot see the RDNA4 GPU regardless of driver or ROCm version.
+**Fix:** Clone and build librocdxg from source, install the resulting .so to /opt/rocm/lib/, and set LD_PRELOAD to load it at every session. The library provides the `/dev/dxg` → HIP bridge that RDNA4 requires.
+**Standing rule:** For any RDNA4 GPU (gfx1201) on WSL2 ROCm: librocdxg is a mandatory non-optional dependency. Document this explicitly in any new machine setup guide. Check for librocdxg presence before any ROCm GPU diagnostic.
+
+---
+
+## Learning 57 — librocdxg build requires Windows SDK 10.0.26100.0 minimum
+
+**Confirmed:** Day 60 (2026-04-03) — R9700 activation
+**What happened:** First build attempt of librocdxg failed with `ntstatus.h: No such file or directory`. The Windows SDK was present (10.0.19041.0) but insufficient. The build appeared to have all dependencies until this header check.
+**Root cause:** librocdxg requires ntstatus.h from the Windows SDK. SDK version 10.0.19041.0 (the common default) does not include this header in the WSL2-accessible path. SDK version 10.0.26100.0 (Windows 11 24H2 SDK) includes it and the build completes cleanly.
+**Fix:** Install Windows SDK 10.0.26100.0 from the Microsoft developer downloads. The SDK installs on Windows and is accessible from WSL2 via the /mnt/c/ mount path during the cmake build.
+**Standing rule:** Before attempting to build librocdxg on a new machine, verify the Windows SDK version with `winver` and the SDK manager. 10.0.26100.0 is the confirmed minimum. Do not attempt the build with earlier SDK versions — it will fail at the ntstatus.h check without a clear error message about the real cause.
+
+---
+
+## Learning 58 — PyTorch ROCm wheel must be version 7.2+ for DXG detection to work
+
+**Confirmed:** Day 60 (2026-04-03) — R9700 activation
+**What happened:** After librocdxg was installed and `/dev/dxg` was present in WSL2, PyTorch ROCm 6.3 and 6.4 wheels still did not detect the R9700. `torch.cuda.is_available()` returned False despite the device being visible to `rocminfo`.
+**Root cause:** PyTorch ROCm wheels prior to 7.2 were compiled against HIP stacks that predate the DXG detection mechanism. The LD_PRELOAD of librocdxg opens the device, but the HIP runtime in older PyTorch wheels does not query the DXG path — it expects the older ROCR-Runtime device enumeration pathway. ROCm 7.2+ wheels include HIP runtime updates that honour the DXG device path.
+**Fix:** Install PyTorch 2.11.0+rocm7.2 specifically. Earlier ROCm variants of PyTorch (including 2.x wheels compiled for rocm6.x) will not work with RDNA4/gfx1201 in WSL2 regardless of librocdxg presence.
+**Standing rule:** For RDNA4 on WSL2: torch version must be 2.11.0+rocm7.2 or later. The full working combination is ROCm 7.2.1 + librocdxg 1.1.1 + torch 2.11.0+rocm7.2. Do not attempt to substitute earlier PyTorch ROCm wheels — the DXG detection is a 7.2 feature.
+
+---
+
+## Learning 59 — R9700 (RDNA4) requires bf16 — fp16 not natively supported; training config must be explicit
+
+**Confirmed:** Day 61 (2026-04-03) — B4-C1 smoke test on R9700
+**What happened:** Smoke test training run on the R9700 confirmed bf16 as the required precision format. fp16 is not natively supported on RDNA4 architecture.
+**Root cause:** RDNA4 (gfx1201) is a bf16-native architecture. It does not have native fp16 tensor operations in the same way NVIDIA Ampere/Ada do. Using fp16 on this hardware either fails silently or falls back to slower emulated paths. bf16 is the correct format for training, matching the hardware's native compute path.
+**Smoke test results (batch 2):** 4.26 sec/step, 7.1GB VRAM peak, loss 0.6638, accuracy 1.0 by step 4, zero OOM, zero ROCm errors.
+**Production config confirmed:**
+```python
+fp16 = False   # must be False on R9700
+bf16 = True    # must be True on R9700
+```
+**Standing rule:** Every training script run on the R9700 must explicitly set `fp16=False, bf16=True`. Do not rely on auto-detection — set both flags explicitly to prevent any fallback to fp16. This applies to both SFT and DPO training passes.
+**Note:** Windows Python environment (RTX 3070) uses fp16 (NVIDIA default). The WSL2 R9700 environment uses bf16. These are separate environments with separate configs — do not cross-apply.
+
+---
+
+*Document updated: Claude A, Day 61, 2026-04-03*
+*L56 CONFIRMED — RDNA4/gfx1201 WSL2 ROCm requires librocdxg — not in standard ROCm install.*
+*L57 CONFIRMED — librocdxg requires Windows SDK 10.0.26100.0 minimum — earlier SDK missing ntstatus.h.*
+*L58 CONFIRMED — PyTorch ROCm wheel must be 7.2+ for DXG detection — 6.x wheels insufficient.*
+*L59 CONFIRMED — R9700 (RDNA4) requires bf16; fp16=False, bf16=True mandatory in all training configs.*
+*Count: 59 confirmed learnings + 1 rejected + 1 candidate.*
 *"Every entry below cost at least one training cycle."*
