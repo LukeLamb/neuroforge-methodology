@@ -834,3 +834,28 @@ bf16 = True    # must be True on R9700
 *L59 CONFIRMED — R9700 (RDNA4) requires bf16; fp16=False, bf16=True mandatory in all training configs.*
 *Count: 59 confirmed learnings + 1 rejected + 1 candidate.*
 *"Every entry below cost at least one training cycle."*
+
+
+---
+
+## L60 — Carry-forward pruning ceiling: ~720 pairs
+
+**Status:** CONFIRMED — Day 64, B5-C5
+**Date confirmed:** 2026-04-05
+
+**Observation:** DPO carry-forward above approximately 720 total pairs causes geometry
+proof capability regression. Observed across B5-C3/C4/C5 when total count exceeded
+this threshold.
+
+**Rule:** Before adding new pairs each cycle, prune carry-forward so that
+(existing pairs) + (new pairs) stays at or below 720 total. New content is
+always the last addition after pruning.
+
+**Why:** Geometry proof construction is a high-precision capability that sits at the
+margin of what rank-32 LoRA can hold at the current DPO pair scale. Excess DPO volume
+displaces it. The ceiling is empirical, not theoretical — treat 720 as the confirmed
+safe limit for the current architecture (Llama 3.1-8B base, rank-32 LoRA, Build 5).
+
+**Note:** L61 candidate (Day 64) — Stage 4 accuracy boundary DPO competes with Stage 5
+ethical reasoning DPO when not domain-isolated. Confirmation at B5-C8 required before
+promoting to confirmed learning.
