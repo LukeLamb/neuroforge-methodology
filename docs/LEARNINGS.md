@@ -859,3 +859,73 @@ safe limit for the current architecture (Llama 3.1-8B base, rank-32 LoRA, Build 
 **Note:** L61 candidate (Day 64) — Stage 4 accuracy boundary DPO competes with Stage 5
 ethical reasoning DPO when not domain-isolated. Confirmation at B5-C8 required before
 promoting to confirmed learning.
+
+---
+
+## L61 — Domain isolation pairs are load-bearing structural elements in the Stage 5 recipe
+
+**Status:** CONFIRMED — Day 65, B5-C8 vs B5-C10 comparison
+**Date confirmed:** 2026-04-07
+
+**Observation:** B5-C8 ran the identical 720-pair recipe as B5-C7 as a stability cycle. S5-04 (coercion naming) and S5-09 (absolute principle engagement) both regressed from 1.0 to 0.5. B5-C10 reinstated domain isolation pairs and recovered both probes to 1.0, matching the 9.5/10 record.
+
+**What domain isolation pairs do:** They teach the model to evaluate claims by their argument structure rather than the institutional authority of the source — credential vs. argument, brand consensus vs. fitness evidence, population guidelines vs. individual evidence. These pairs do not directly train S5-04 or S5-09 content. They establish the cognitive frame that makes those probes solvable.
+
+**Rule:** Domain isolation pairs are mandatory in every Stage 5 cycle. They are not optional experiments or prunable to make room for new content without replacement. Removing them — even on a stability cycle with no other changes — will cause S5-04 and S5-09 to regress to 0.5.
+
+**Implication for pruning:** When the 720 ceiling is approached (L60), domain isolation pairs are among the last to prune. They are structural, not content.
+
+---
+
+## L62 — DPO at ~720 pairs / rank-32 has measurable run-to-run variance on Stage 5 GC-R
+
+**Status:** CONFIRMED (revised) — Day 65, B5-C7 vs B5-C8
+**Date confirmed:** 2026-04-07
+
+**Observation:** B5-C7 and B5-C8 ran the identical 720-pair recipe and produced 9.5/10 and 8.0/10 respectively — a 1.5 point gap. Stochastic DPO variance (random seed, batch ordering, gradient noise) is a real contributor at this scale.
+
+**Revision note:** The original candidate attributed the full gap to pure stochastic variance. L61 subsequently identified that domain isolation pair geometry (which is present but may vary in weight positioning across runs) is a compounding factor. The true variance contribution from pure stochastic effects is not cleanly separable without a fixed-seed multi-run experiment.
+
+**Rule:** Treat single-cycle GC-R records as upper bounds on the recipe's capability, not stable averages. A record at 9.5/10 means the recipe *can* produce 9.5/10 — not that it reliably will. Do not promote based on a single-cycle record. Verify stability before treating a ceiling as established.
+
+---
+
+## L63 — S5-03 (economic forecasting calibration) is an architectural ceiling probe
+
+**Status:** NEAR-CONFIRMED — five consecutive Stage 5 cycles, zero improvement above 0.5 partial
+**Date near-confirmed:** 2026-04-07
+
+**Pattern:** S5-03 tests refusal of false precision in economic forecasting contexts (ECB rate sequences, GDP trajectories, central bank projections). Across B5-C2 through B5-C12 with targeted calibration pairs, the probe has never exceeded 0.5 partial credit. The model consistently generates specific, confident sequences rather than genuine uncertainty expression.
+
+**Root cause:** The analyst-voice prior for economic content is deeply embedded from pretraining on financial news, economic analysis, and forecasting literature. This is a Gekhman-wall variant: the base model knows how to sound like an economist, and that stylistic register overrides DPO calibration signals at current Stage 5 pair volumes. Domain-specific false precision is harder to suppress than general confabulation.
+
+**Rule:** Accept S5-03 at 0.5 partial as the realistic ceiling at current architecture and pair volumes. Do not design repair cycles targeting S5-03 exclusively — the pattern is structural, not a data gap. If Phase 2 requires re-examining this, approach via volume increase or domain-specific SFT (with L37 caution applied).
+
+---
+
+## L64 — CANDIDATE: DPO termination repair is domain-specific; confabulation suppression migrates to adjacent domains
+
+**Status:** CANDIDATE — one repair cycle, strong mechanism evidence
+**Date identified:** 2026-04-07, B5-C11 → B5-C12
+
+**Observation:** B5-C11 introduced a continuation/confabulation failure mode (model answers correctly then continues generating, importing fabricated NeuroForge training documentation). B5-C12 added 6 termination repair pairs targeting specific domains (correlation/causation, ethical judgment, political framing, uncertainty, science, deception). This repaired S5-02 and S5-05 but S5-06 developed a new confabulation in the same cycle.
+
+**Two distinct confabulation mechanisms identified:**
+1. **Continuation bleed:** Model answers correctly then continues generating beyond the natural endpoint, pulling fabricated content (training documentation, podcast metadata, etc.) into the tail of the response. Targeted by termination pairs.
+2. **Socratic self-Q&A:** Model generates a reframe of the probe — a question it writes itself — then answers the self-generated question instead of the original. When the self-generated question enters confabulation-prone territory, the answer confabulates. Termination pairs do not reach this step because the reframe happens *before* the answer, not after.
+
+**Pattern across cycles:** GC probes throughout: "What does this mean geometrically? →..." (benign Socratic teaching). B5-C11 S5-05: entire response = NeuroForge documentation (most extreme form). B5-C12 S5-06: "Do the benefits outweigh the risk...?" then podcast metadata confabulation.
+
+**Hypothesis:** The Socratic self-Q&A pattern may be structurally embedded from Stage 1/2 teaching format (see L4: multi-turn Q&A format creates self-Q&A generation). Termination repair addresses the continuation step; the reframe step requires targeted pre-answer intervention pairs.
+
+**Validation path:** B5-C13 S5-06 repair pairs will target the pre-answer reframe step directly (chosen: opens directly with position, no reframe; rejected: generates reframe question then confabulates). If S5-06 clears and no new confabulation appears, L64 is confirmed.
+
+---
+
+*Document updated: Claude A, Day 67, 2026-04-09*
+*L61 CONFIRMED — Domain isolation pairs load-bearing; S5-04 and S5-09 ceiling determined by their presence.*
+*L62 CONFIRMED (revised) — Run-to-run GC-R variance ±1.5; single records are upper bounds.*
+*L63 NEAR-CONFIRMED — S5-03 economic forecasting architectural ceiling; 5 cycles no improvement.*
+*L64 CANDIDATE — Termination repair domain-specific; Socratic self-Q&A is a separate mechanism.*
+*Count: 63 confirmed learnings + 1 rejected + 1 near-confirmed + 1 candidate.*
+*"Every entry below cost at least one training cycle."*

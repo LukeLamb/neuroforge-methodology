@@ -19,6 +19,9 @@
 | 2026-04-02 | B4-C1 promoted. forge:b4c1-nosys. DPO margin record 20.87. |
 | 2026-04-03 | **R9700 activated.** Build 4 closed. RunPod retired. Build 5 opens. |
 | 2026-04-04 | B5-C1 eval complete. Stage 1 GC-R 9/9. Stage 5 GC-R 5.5/10. Not promoted. |
+| 2026-04-05 | Stage 4 memory pipeline fully operational. Natural memory weave confirmed. B5-C3 promoted. forge:b5c3-nosys. |
+| 2026-04-07 | B5-C7: Stage 5 GC-R 9.5/10 — Build 5 record. forge:b5c7-nosys promoted. 720 DPO pairs. L60 + L61 confirmed. |
+| 2026-04-07 | B5-C10 and B5-C11 promoted. forge:b5c11-nosys production. Socratic self-Q&A confabulation mechanism diagnosed (L64). Phase 2: 3/4 conditions met. |
 
 ---
 
@@ -117,3 +120,40 @@ Build 5 opens on R9700. B5-C1 SFT (5.5 min, loss 1.516) + DPO (20.9 min, loss 0.
 
 *Timeline updated: Claude C, Day 62, 2026-04-04*
 *59 confirmed learnings. 62 days. Build 5 active. Stage 5 GC-R: 5.5/10.*
+
+### 2026-04-05 — Day 63 — Stage 4 Fully Operational. B5-C2 and B5-C3.
+
+Stage 4 memory injection confirmed working. forge_chat.py correctly injecting Qdrant semantic + recency memories into prompt context via `build_prompt()`. Two-session recall test PASS: cinema trip (Mario Brothers, Nintendo 40th anniversary) naturally woven into Forge response. Memory pipeline fully operational for the first time. B5-C2 trained (704 pairs) and evaluated. B5-C3 dispatched targeting Stage 5 reasoning depth. **B5-C3 promoted. forge:b5c3-nosys.** Stage 5 GC-R: 8.5/10 (Phase 1 ceiling at this recipe).
+
+### 2026-04-07 — Day 64 — B5-C4 through B5-C7. Stage 5 Record.
+
+fork_chat.py upgraded: top_k 3→10, minimal sensorium block added. Springdrift repository (arXiv:2604.04660) analysed in depth — "Artificial Retainer" framing identified as closest published parallel to NeuroForge Forge/Luke relationship. Interactive/autonomous agent split identified as critical Stage 7 design decision. Email sent to Seamus Brady (Springdrift author, seamus@corvideon.ie) re weight-level vs runtime enforcement comparison. Research papers filed: QED-Nano, MemMachine, Springdrift, Cog-DRIFT.
+
+B5-C4: domain isolation pairs tested — not promoted. B5-C5 through B5-C6: targeted repair cycles. **B5-C7: 9.5/10 Stage 5 GC-R — Build 5 record (matches best ever). S5-04 and S5-09 both 1.0. forge:b5c7-nosys PROMOTED.** 720 DPO pairs confirmed as safe ceiling (L60 confirmed). L61 candidate: domain isolation pairs load-bearing.
+
+Documentation debt cleared: SKILL.md full rewrite, CYCLE_CLOSE_APPROVED.md filed, Roadmap v2.3 confirmed.
+
+### 2026-04-07 — Day 65 — Six Cycles. forge:b5c11-nosys Production.
+
+Six cycles trained in one day (B5-C8 was stability, B5-C9 was targeted repair, B5-C10 through B5-C12 ran in evening session).
+
+**B5-C8:** Stability cycle, identical 720-pair recipe. 8.0/10 — not promoted. S5-03, S5-04, S5-09 regressed. GC-08 recovered. L62 candidate: stochastic DPO variance ±1.5 points at current scale. OOM at batch 4 confirmed — batch 2 permanent for Build 5.
+
+**B5-C9:** Targeted repair (6 new pairs). 8.0/10 — not promoted. 8.0 floor confirmed.
+
+**B5-C10:** Domain isolation pairs reinstated. 9.5/10 — PROMOTED. forge:b5c10-nosys. S5-04 and S5-09 both repaired to 1.0. **L61 CONFIRMED: domain isolation pairs are load-bearing structural elements.**
+
+**B5-C11:** +3 institutional authority isolation pairs. 8.5/10 — PROMOTED. forge:b5c11-nosys. New confabulation failure mode: model continues past natural endpoint, pulls fabricated NeuroForge training documentation into response (S5-05 entire response = training docs). Phase 2 not activated: confabulation disqualifies stability claim.
+
+**B5-C12:** +6 termination repair pairs + 2 S5-09 frame refusal pairs. 7.5/10 — passes gates, NOT promoted. S5-02 and S5-05 confabulation REPAIRED. S5-09 REPAIRED. New S5-06 confabulation: Socratic self-Q&A (model generates reframe question, then confabulates answer to reframe). Production remains forge:b5c11-nosys.
+
+Socratic self-Q&A mechanism diagnosed — two distinct patterns: (1) continuation bleed (after answer), (2) pre-answer reframe (L64 candidate). Substack Edition 11 written and ready. 64 confirmed learnings. 731 DPO pairs.
+
+### 2026-04-09 — Day 67 — Documentation debt cleared. B5-C13 pending.
+
+Day 66 (2026-04-08) missed. Day 67 opens with production at forge:b5c11-nosys. forge_query.py updated to b5c11-nosys. LEARNINGS.md L61–L64 appended. TIMELINE.md updated. GitHub push pending. B5-C13 design ready (5 pairs: 3 S5-06 repair, 1 S5-08 repair, 1 S5-03 floor). Phase 2 activation: 3/4 conditions met — S5-06 clean is the sole remaining blocker.
+
+---
+
+*Timeline updated: Claude A, Day 67, 2026-04-09*
+*64 confirmed learnings. 67 days. Build 5 active. forge:b5c11-nosys production. Stage 5 GC-R best: 9.5/10 (B5-C7, B5-C10).*
