@@ -8,3 +8,6 @@ __pycache__/
 *.pyc
 .env
 *.log
+
+# Accidentally-placed installers
+*.deb
