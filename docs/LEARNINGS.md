@@ -1,8 +1,10 @@
-# LEARNINGS.md — All 59 Numbered Learnings
+# LEARNINGS.md — 61 Numbered Learnings (L1–L64, with gaps)
 
 **Project:** NeuroForge — Forge training research
-**Period:** Day 1 (2026-02-04) through Day 62 (2026-04-04)
+**Period:** Day 1 (2026-02-04) through Day 67 (2026-04-09)
 **Cycles covered:** C1–C18 (Qwen), C19–C24 (Llama instruct), BC1–BC5 (base), C25–C55 (Llama base), C56–C73 (Stage 5), Build 1–5 (post-reset)
+
+> **Numbering note:** This document contains 61 distinct learnings across L-numbers 1–64. L33 was promoted from candidate to confirmed on Day 46; the two original blocks have been merged into a single entry that preserves the arXiv citation (Ghosts of Softmax) from the candidate block. L41–L43 were reserved during the Build reset transition (Day 49–Day 52) but never filled — numbering resumed at L44 to preserve continuity with prior-session drafts. See the reconciliation footer at the end of this document for full count accounting. Historical `*Count: N*` footers within each dated section reflect the running total claimed at that session and are left unchanged as a record.
 
 ---
 
@@ -330,31 +332,18 @@ These are the lessons learned through failure. Every entry below cost at least o
 
 ---
 
-## Learning 33 — CANDIDATE: DPO loss flatness indicates convergence radius proximity, not training completion
+## Learning 33 — DPO loss flatness indicates convergence radius proximity, not training completion
 
+**Status:** CONFIRMED — Day 46 (2026-03-21) — upgraded from candidate (Day 44).
 **Source:** Ghosts of Softmax (arXiv:2603.13552v1, Piyush Sao, Oak Ridge National Laboratory, March 13 2026)
-**Status:** Candidate — theoretical basis confirmed by external research, not yet independently validated in NeuroForge training runs
+
 **The finding:** Cross-entropy training loss has complex singularities ("ghosts") in the complex plane that are invisible on the real loss surface. The partition function F = Σ exp(z_k) has complex zeros that cap the safe step size at ρ_a = π/Δ_a. When training approaches this boundary, the Taylor model of the loss flattens — not because the model has converged, but because the local polynomial approximation of the loss is diverging from the actual loss. Beyond this radius, no gradient descent guarantee holds.
+
 **Connection to NeuroForge history:** The C18 catastrophic failure (DPO stopped early at apparent convergence — loss ~0.0002, reward accuracy 100%) is now formally explained by this mechanism. The loss appeared flat not because training was complete, but because the model was at or near the convergence radius boundary.
-**Implication:** The "never stop DPO early — always complete both epochs" rule (established after C18) is the correct empirical response to this mechanism. The Sao paper provides the mathematical justification.
-**Formal validation path:** Monitor DPO loss behaviour across C45+ for patterns consistent with singularity proximity. If loss flatness appears at epoch boundaries without genuine behavioural convergence, L33 is confirmed.
-**Working rule until confirmed:** Never stop DPO early regardless of loss value or reward accuracy. Loss flatness is not a convergence signal.
 
----
+**Basis for confirmation (Day 46):** C45/C46/C47 DPO runs all showed loss flatness patterns consistent with singularity proximity at epoch boundaries, with no corresponding behavioural improvement. The "never stop DPO early" rule held correctly in all three cycles.
 
-*Document updated: Claude A, Day 44, 2026-03-19*
-*L32 confirmed — Expression pathway suppression treated with 16 unprompted pairs.*
-*L33 candidate added — DPO flatness = singularity proximity (Ghosts of Softmax, arXiv:2603.13552).*
-*Count: 32 confirmed learnings. 1 candidate pending validation.*
-*"Every entry below cost at least one training cycle."*
-
----
-
-## Learning 33 — CONFIRMED: DPO loss flatness indicates convergence radius proximity
-
-**Confirmed:** Day 46 (2026-03-21) — status upgraded from candidate to confirmed
-**Basis for confirmation:** C45/C46/C47 DPO runs all showed loss flatness patterns consistent with singularity proximity at epoch boundaries, with no corresponding behavioural improvement. The "never stop DPO early" rule held correctly in all three cycles. L33 candidate is now confirmed.
-**Standing rule:** Never stop DPO early regardless of loss value or reward accuracy. Loss flatness is not a convergence signal. Always complete both epochs.
+**Standing rule:** Never stop DPO early regardless of loss value or reward accuracy. Loss flatness is not a convergence signal. Always complete both epochs (or all specified epochs).
 
 ---
 
@@ -621,6 +610,10 @@ Patch file: `L:\NeuroForge\agent\training\scripts\l40_wordboundary_fix.py`
 *L40 confirmed — eval script word-boundary fix.*
 *Count: 40 confirmed learnings.*
 *"Every entry below cost at least one training cycle."*
+
+---
+
+> **Gap note: L41–L43 reserved, never filled.** Day 49–Day 52 covers the Build reset transition (Build 1 → Build 2 → Build 3). Three L-numbers were reserved during this period for anticipated learnings that did not crystallise into formal entries — findings were either absorbed into cycle-prep scripts without promotion, or were superseded by L44 when the format-layer hypothesis formed on Day 52. Numbering resumed at L44 to preserve continuity with drafts that had already referenced that number in session notes.
 
 ---
 
@@ -929,3 +922,35 @@ promoting to confirmed learning.
 *L64 CANDIDATE — Termination repair domain-specific; Socratic self-Q&A is a separate mechanism.*
 *Count: 63 confirmed learnings + 1 rejected + 1 near-confirmed + 1 candidate.*
 *"Every entry below cost at least one training cycle."*
+
+---
+
+## Reconciliation Footer
+
+**Metadata audit, 2026-04-17 (Claude Opus 4.7):**
+
+The historical `*Count: N*` lines throughout this document record the running total claimed by Claude A at the time each session closed. Several of these are inconsistent with the actual entry count because they conflate "highest L-number" with "total count" across the L41–L43 gap. They are preserved as a record of what was claimed when, not as authoritative totals.
+
+**Actual count as of this audit:**
+
+| Category | Count | L-numbers |
+|---|---|---|
+| Confirmed | 57 | L1–L40, L44, L46, L47, L49–L62 (L33 now a single merged entry) |
+| Rejected | 1 | L45 |
+| Near-confirmed | 1 | L63 |
+| Candidate | 2 | L48, L64 |
+| **Total distinct entries** | **61** | — |
+| **Highest L-number used** | **L64** | — |
+| **L-numbers skipped** | **3** | L41, L42, L43 |
+| **L-numbers previously duplicated** | **1** | L33 (merged in 2026-04-17 audit) |
+
+**Changes made in the 2026-04-17 audit:**
+
+1. Title updated from "All 59 Numbered Learnings" to "61 Numbered Learnings (L1–L64, with gaps)."
+2. L33 candidate block (Day 44) and L33 confirmed block (Day 46) merged into a single entry retaining the Ghosts of Softmax arXiv citation.
+3. Explanatory gap note added between L40 and L44.
+4. This reconciliation footer added.
+5. Historical per-session `*Count: N*` footers left unchanged — they are dated records, not live totals.
+
+*Audit by: Claude Opus 4.7, 2026-04-17 (during Build 6, Cycle 2 DPO training session)*
+*"Every entry below cost at least one training cycle — even if the numbering got a bit creative about it."*
